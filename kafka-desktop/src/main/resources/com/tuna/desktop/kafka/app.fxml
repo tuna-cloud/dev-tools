@@ -3,31 +3,26 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<VBox alignment="CENTER" spacing="2.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.tuna.desktop.kafka.controller.KafkaController">
-   <children>
-      <MenuBar>
-         <menus>
-            <Menu mnemonicParsing="false" text="Tools">
-               <items>
-                  <RadioMenuItem text="Kafka"/>
-                  <RadioMenuItem text="Zookeeper"/>
-                  <RadioMenuItem text="Redis"/>
-               </items>
-            </Menu>
-         </menus>
-      </MenuBar>
-      <HBox fillHeight="true" VBox.vgrow="ALWAYS">
-         <children>
-            <TreeView fx:id="treeView" onMouseClicked="#onTreeViewClick" prefWidth="200.0" HBox.hgrow="NEVER" />
-            <Separator orientation="VERTICAL" />
-            <TableView HBox.hgrow="ALWAYS">
-               <columns>
-                  <TableColumn prefWidth="90.0" text="%offset" />
-                  <TableColumn prefWidth="160.0" text="Key" />
-                  <TableColumn prefWidth="-Infinity" text="Value" />
-               </columns>
-            </TableView>
-         </children>
-      </HBox>
-   </children>
+<?import javafx.scene.SubScene?>
+<VBox alignment="CENTER" spacing="2.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.tuna.desktop.kafka.controller.AppController">
+    <children>
+        <MenuBar>
+            <menus>
+                <Menu mnemonicParsing="false" text="%menu.tool">
+                    <items>
+                        <RadioMenuItem text="Kafka" fx:id="kafka"/>
+                        <RadioMenuItem text="Zookeeper" fx:id="zookeeper"/>
+                        <RadioMenuItem text="Redis" fx:id="redis"/>
+                    </items>
+                </Menu>
+            </menus>
+        </MenuBar>
+        <HBox fillHeight="true" VBox.vgrow="ALWAYS">
+            <children>
+                <TreeView fx:id="treeView" onMouseClicked="#onTreeViewClick" prefWidth="200.0" HBox.hgrow="NEVER"/>
+                <Separator orientation="VERTICAL"/>
+            </children>
+        </HBox>
+    </children>
 </VBox>
