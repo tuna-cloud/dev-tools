@@ -12,20 +12,20 @@
   </parent>
 
   <groupId>com.tuna.desktop</groupId>
-  <artifactId>tuna-kafka-tools</artifactId>
-  <name>Tuna Kafka tools</name>
-  <description>A Kafka Manager Tools</description>
+  <artifactId>tuna-dev-tools</artifactId>
+  <name>Tuna dev tools</name>
+  <description>A developer tools suit</description>
   <packaging>pom</packaging>
   <version>1.0.0</version>
 
   <modules>
-    <module>kafka-desktop</module>
+    <module>ui</module>
   </modules>
 
   <properties>
     <application.buildNumber>1</application.buildNumber>
     <application.profile>dev</application.profile>
-    <javafx.version>11</javafx.version>
+    <javafx.version>17</javafx.version>
     <jpackage.modules>javafx.base,javafx.controls,javafx.fxml,javafx.graphics,javafx.media,javafx.swing,javafx.web,java.base,java.compiler,java.instrument,java.prefs,java.rmi,java.scripting,java.security.jgss,java.sql.rowset,java.xml.crypto,jdk.attach,jdk.httpserver,jdk.jconsole,jdk.jdi,jdk.unsupported</jpackage.modules>
     <jpackage.vendor>"github.com/tuna-free"</jpackage.vendor>
     <jpackage.version>${version}</jpackage.version>
