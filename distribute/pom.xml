@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <artifactId>tuna-dev-tools</artifactId>
+        <groupId>com.tuna.desktop</groupId>
+        <version>1.0.0</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>distribute</artifactId>
+    <version>1.0.0</version>
+
+    <properties>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.tuna.desktop</groupId>
+            <artifactId>tools-kafka</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.tuna.desktop</groupId>
+            <artifactId>tools-utils</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.tuna.desktop</groupId>
+            <artifactId>ui</artifactId>
+            <version>1.0.0</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <version>3.1.0</version>
+                <executions>
+                    <execution>
+                        <id>create-binary</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                        <configuration>
+                            <attach>false</attach>
+                            <!--<tarLongFileMode>posix</tarLongFileMode>-->
+                            <finalName>${project.artifactId}-${project.version}</finalName>
+                            <descriptors>
+                                <descriptor>src/assemble/assemble.xml</descriptor>
+                            </descriptors>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>1.6.0</version>
+                <executions>
+                    <execution>
+                        <id>package-java-image</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <skip>true</skip>
+                            <executable>jlink</executable>
+                            <commandlineArgs>
+                                --output ${project.basedir}/target/jLinkImage
+                                --module-path ${javafx.mod.home}
+                                --add-modules ${jpackage.modules}
+                                --no-header-files
+                                --no-man-pages
+                                --strip-native-commands
+                                --strip-debug
+                            </commandlineArgs>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>copy-javafx-lib</id>
+                        <phase>package</phase>
+                        <goals><goal>exec</goal></goals>
+                        <configuration>
+                            <skip>true</skip>
+                            <executable>cp</executable>
+                            <commandlineArgs>
+                                -r
+                                ${javafx.sdk.home}/lib
+                                ${project.basedir}/target/jLinkImage
+                            </commandlineArgs>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>package-java-binary</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <skip>true</skip>
+                            <executable>jpackage</executable>
+                            <commandlineArgs>
+                                --module-path ${javafx.mod.home}
+                                --runtime-image ${project.basedir}/target/jLinkImage
+                                --vendor ${jpackage.vendor}
+                                --app-version ${jpackage.version}
+                                --name ${jpackage.name}
+                                --install-dir ${jpackage.install.dir}
+                                --java-options "${jpackage.options}"
+                                --java-options "${jpackage.jvm.options}"
+                                --arguments ${jpackage.arguments}
+                                --dest ${project.basedir}/target
+                                --temp ${project.basedir}/target/tempDir
+                                --input ${project.basedir}/target/${project.artifactId}-${project.version}-bin/${project.artifactId}-${project.version}/tuna
+                                --main-jar ${jpackage.mainjar}
+                                --main-class ${jpackage.mainClass}
+                                ${jpackage.platform.args}
+                            </commandlineArgs>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>
