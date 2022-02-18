@@ -1,0 +1,18 @@
+.tree-cell .tree-disclosure-node .arrow {
+    -fx-shape: "M 0 -1 L 3 -1 L 3 -4 L 5 -4 L 5 -1 L 8 -1 L 8 1 L 5 1 L 5 4 L 3 4 L 3 1 L 0 1 z";
+}
+.tree-cell:expanded .tree-disclosure-node .arrow {
+    -fx-rotate: 0;
+    -fx-scale-shape: false;
+    -fx-shape: "M 0 -1 L 7 -1 L 7 1 L 0 1 z";
+}
+.context-menu {
+    -fx-background-color: rgba(71, 71, 71, 1);
+    -fx-text-fill: white;
+}
+.menu-item .label {
+    -fx-text-fill: white;
+}
+.menu-item:focused .label {
+    -fx-text-fill: rgba(240, 245, 245, 1);
+}

@@ -20,6 +20,9 @@
 
   <modules>
     <module>ui</module>
+      <module>plugin-api</module>
+    <module>tools-kafka</module>
+      <module>distribute</module>
   </modules>
 
   <properties>
@@ -120,10 +123,6 @@
     <dependency>
       <groupId>com.lmax</groupId>
       <artifactId>disruptor</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>io.vertx</groupId>
-      <artifactId>vertx-core</artifactId>
     </dependency>
     <dependency>
       <groupId>junit</groupId>
