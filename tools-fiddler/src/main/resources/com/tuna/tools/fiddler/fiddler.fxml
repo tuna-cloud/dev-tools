@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.SplitPane?>
+<?import javafx.scene.control.Tab?>
+<?import javafx.scene.control.TabPane?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.FlowPane?>
+
+<AnchorPane prefHeight="477.0" prefWidth="585.0" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.tuna.tools.fiddler.FiddlerController">
+   <children>
+      <SplitPane fx:id="splitPane" dividerPositions="0.67" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+        <items>
+          <AnchorPane fx:id="leftPane" minWidth="300.0">
+               <children>
+                  <TableView prefHeight="398.0" prefWidth="300.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                    <columns>
+                      <TableColumn prefWidth="75.0" text="#" />
+                      <TableColumn prefWidth="75.0" text="URL" />
+                        <TableColumn prefWidth="75.0" text="Http Version" />
+                        <TableColumn prefWidth="75.0" text="Result" />
+                        <TableColumn prefWidth="75.0" text="Method" />
+                        <TableColumn prefWidth="75.0" text="Process" />
+                        <TableColumn prefWidth="75.0" text="Remote Ip" />
+                        <TableColumn prefWidth="75.0" text="Body Size" />
+                        <TableColumn prefWidth="75.0" text="Comments" />
+                    </columns>
+                  </TableView>
+               </children>
+            </AnchorPane>
+          <AnchorPane fx:id="rightPane" minHeight="0.0" minWidth="200.0" prefHeight="160.0" prefWidth="100.0">
+               <children>
+                  <TabPane prefHeight="398.0" prefWidth="291.0" tabClosingPolicy="UNAVAILABLE" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                    <tabs>
+                      <Tab text="Overview">
+                        <content>
+                          <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0" />
+                        </content>
+                      </Tab>
+                      <Tab text="Inspectors">
+                        <content>
+                          <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="262.0" />
+                        </content>
+                      </Tab>
+                        <Tab text="Settings">
+                           <content>
+                              <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="262.0">
+                                 <children>
+                                    <FlowPane>
+                                       <children>
+                                          <TextField fx:id="bindPortTextField" />
+                                          <Button mnemonicParsing="false" onMouseClicked="#onWebServerStartClick" text="开始" />
+                                       </children>
+                                    </FlowPane>
+                                 </children></AnchorPane>
+                           </content>
+                        </Tab>
+                    </tabs>
+                  </TabPane>
+               </children>
+            </AnchorPane>
+        </items>
+      </SplitPane>
+   </children>
+</AnchorPane>

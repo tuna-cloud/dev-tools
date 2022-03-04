@@ -24,6 +24,7 @@
         <module>tools-kafka</module>
         <module>distribute</module>
         <module>tools-utils</module>
+        <module>tools-fiddler</module>
     </modules>
 
     <properties>
