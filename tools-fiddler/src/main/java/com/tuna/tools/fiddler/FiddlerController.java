@@ -12,10 +12,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.http.impl.CookieImpl;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.net.JksOptions;
-import io.vertx.core.net.NetClient;
-import io.vertx.core.net.NetClientOptions;
-import io.vertx.core.net.NetSocket;
+import io.vertx.core.net.*;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.TextField;
@@ -25,6 +22,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.net.URL;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Queue;
 import java.util.ResourceBundle;
@@ -55,64 +53,41 @@ public class FiddlerController implements Initializable {
             });
         });
 
-        HttpServerOptions options = new HttpServerOptions();
+        NetServerOptions options = new NetServerOptions();
         if (StringUtils.isNotEmpty(bindPortTextField.getText())) {
             options.setPort(Integer.parseInt(bindPortTextField.getText()));
         }
         options.setSsl(false);
-        options.setKeyStoreOptions(new JksOptions().setPath("/Users/xuyang/IdeaProjects/tuna-dev-tools/tools-fiddler/src/main/resources/tuna.jks").setPassword("tuna.tools"));
-        HttpServer httpServer = vertx.createHttpServer(options);
+        NetServer netServer = vertx.createNetServer(options);
 
-        httpServer.requestHandler(serverRequest -> {
-            if (serverRequest.method() == HttpMethod.CONNECT) {
-                String[] hostPort = serverRequest.headers().get("Host").split(":");
-                if (hostPort[0].contains("google")) {
-                    return;
+        netServer.connectHandler(netSocket -> {
+            netSocket.handler(message -> {
+                String text = message.toString();
+                if (text.startsWith("CONNECT")) {
+                    String[] lines = text.split("\n");
+                    String[] hostPort = lines[0].split(" ")[1].split(":");
+                    Future<NetSocket> proxyFuture = startNetClient(hostPort[0], Integer.parseInt(hostPort[1]));
+                    proxyFuture.onComplete(proxyResult -> {
+                        if (proxyResult.succeeded()) {
+                            netSocket.write("HTTP/1.0 200 Connection established\n\n");
+                            netSocket.handler(proxyResult.result()::write);
+                            proxyResult.result().handler(netSocket::write);
+                        }
+                    });
                 }
-
-                Future<NetSocket> proxySocketFuture = startSSLNetClient(hostPort[0], hostPort.length > 1 ? Integer.parseInt(hostPort[1]) : 443);
-                proxySocketFuture.onComplete(r -> {
-                    if (r.succeeded()) {
-                        proxySocketMap.put(serverRequest.host(), r.result());
-                        r.result().handler(buf -> {
-                            logger.info("response: \n{}", buf.toString());
-                            if (httpSocketMap.containsKey(serverRequest.host())) {
-                                httpSocketMap.get(serverRequest.host()).write(buf);
-                            }
-                        });
-                    } else {
-                        logger.error("connect to {} failed", serverRequest.host());
-                    }
-                });
-                Future<NetSocket> httpNetSocketFuture = serverRequest.toNetSocket().compose(socket -> socket.upgradeToSsl().map(socket));
-                httpNetSocketFuture.onComplete(r -> {
-                    if (r.succeeded()) {
-                        httpSocketMap.put(serverRequest.host(), r.result());
-                        r.result().handler(buf -> {
-                            logger.info("request: \n{}", buf.toString());
-                            if (proxySocketMap.containsKey(serverRequest.host())) {
-                                proxySocketMap.get(serverRequest.host()).write(buf);
-                            }
-                        });
-                    } else {
-                        logger.error("proxy failed", r.cause());
-                    }
-                });
-            } else {
-                logger.info("url: {}, method: {}, headers: {}", serverRequest.absoluteURI(), serverRequest.method().name(), serverRequest.headers().toString());
-            }
+            });
         });
 
-        httpServer.listen(res -> {
+        netServer.listen(res -> {
             if (res.succeeded()) {
-                logger.info("http server bind at {} success", res.result().actualPort());
+                logger.info("Net server bind at {} success", res.result().actualPort());
             } else {
-                logger.error("http server bind failed", res.cause());
+                logger.error("Net server bind failed", res.cause());
             }
         });
     }
 
-    private Future<NetSocket> startSSLNetClient(String host, int port) {
+    private Future<NetSocket> startNetClient(String host, int port) {
         Promise<NetSocket> promise = Promise.promise();
 
         NetClientOptions clientOptions = new NetClientOptions();
@@ -120,16 +95,7 @@ public class FiddlerController implements Initializable {
         NetClient client = vertx.createNetClient(clientOptions);
         client.connect(port, host, connectResult -> {
             if (connectResult.succeeded()) {
-                connectResult.result().upgradeToSsl().onComplete( v -> {
-                    if (v.succeeded()) {
-                        logger.info("ssl connection to {}:{} success", host, port);
-                        promise.complete(connectResult.result());
-                    } else {
-                        promise.fail(v.cause());
-                    }
-                });
-//                promise.complete(connectResult.result());
-
+                promise.complete(connectResult.result());
             } else {
                 promise.fail(connectResult.cause());
             }
