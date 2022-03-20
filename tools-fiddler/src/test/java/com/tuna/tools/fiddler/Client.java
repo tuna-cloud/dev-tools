@@ -18,10 +18,7 @@ public class Client {
             request.send(s -> {
                 if (s.succeeded()) {
                     HttpClientResponse response = s.result();
-                    response.bodyHandler(buf -> {
-                        System.out.println(buf.toString());
-                    });
-
+                    response.bodyHandler(buf -> System.out.println(buf.toString()));
                 }
             });
 

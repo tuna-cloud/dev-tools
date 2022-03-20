@@ -50,7 +50,7 @@
         <Logger name="io.vertx.ext.jwt.JWT" level="WARN"/>
 
         <AsyncRoot level="${OUTPUT_LOG_LEVEL}">
-            <!--      <Appender-ref ref="tunaServerInfo"/>-->
+<!--            <Appender-ref ref="tuna-info"/>-->
             <!--      <Appender-ref ref="tunaServerError"/>-->
             <appender-ref ref="tuna-console"/>
         </AsyncRoot>
