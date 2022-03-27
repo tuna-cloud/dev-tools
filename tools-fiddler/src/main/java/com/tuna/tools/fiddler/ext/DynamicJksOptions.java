@@ -83,7 +83,7 @@ public class DynamicJksOptions extends JksOptions {
         return helper != null ? helper.getKeyMgrFactory() : null;
     }
 
-    public DynamicKeyStoreHelper getHelper(Vertx vertx) throws Exception {
+    public DynamicKeyStoreHelper getHelper(Vertx vertx) {
         if (helper == null) {
             helper = new DynamicKeyStoreHelper(getPath() + File.separator + getRootKey(),
                     getPath() + File.separator + getRootCert());

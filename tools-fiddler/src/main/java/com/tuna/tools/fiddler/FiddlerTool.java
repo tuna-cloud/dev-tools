@@ -35,6 +35,11 @@ public class FiddlerTool implements ToolPlugin {
 
     @Override
     public void onTreeItemDoubleClick(List<String> path) {
+        for (Tab tab : ctx.tabPane().getTabs()) {
+            if (name().equals(tab.getId())) {
+                return;
+            }
+        }
         Tab tab = new Tab();
         tab.setText(name());
         tab.setId(name());
