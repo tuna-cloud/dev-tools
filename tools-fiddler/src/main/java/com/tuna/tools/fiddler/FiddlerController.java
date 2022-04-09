@@ -1,29 +1,47 @@
 package com.tuna.tools.fiddler;
 
-import com.tuna.commons.utils.JacksonUtils;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
+import javafx.scene.Parent;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
+import javafx.scene.control.TextArea;
+import javafx.scene.control.TextField;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.VBox;
+import javafx.stage.Popup;
+import javafx.stage.Window;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.awt.Dimension;
+import java.awt.Toolkit;
 import java.net.URL;
 import java.util.ResourceBundle;
-import java.util.Set;
 
 public class FiddlerController implements Initializable {
     private static final Logger logger = LogManager.getLogger(FiddlerController.class);
 
     @FXML
     private Spinner bindPort;
+    @FXML
+    private CheckBox https;
+    @FXML
+    private CheckBox systemProxySet;
+    @FXML
+    private CheckBox remoteEnable;
+    @FXML
+    private CheckBox http2Enable;
+    @FXML
+    private TextArea byPass;
     @FXML
     private VBox mainViewVBox;
     @FXML
@@ -54,6 +72,13 @@ public class FiddlerController implements Initializable {
     @FXML
     private TableColumn colHost;
 
+    @FXML
+    private TextArea overView;
+    @FXML
+    private TextField keyWord;
+    private boolean isRunning = false;
+
+    public static Log selectedLog;
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
@@ -71,12 +96,14 @@ public class FiddlerController implements Initializable {
         bindPort.setValueFactory(new SpinnerValueFactory() {
             @Override
             public void decrement(int steps) {
-                bindPort.getEditor().setText(Integer.toString(Integer.parseInt(bindPort.getEditor().getText()) - steps));
+                bindPort.getEditor()
+                        .setText(Integer.toString(Integer.parseInt(bindPort.getEditor().getText()) - steps));
             }
 
             @Override
             public void increment(int steps) {
-                bindPort.getEditor().setText(Integer.toString(Integer.parseInt(bindPort.getEditor().getText()) + steps));
+                bindPort.getEditor()
+                        .setText(Integer.toString(Integer.parseInt(bindPort.getEditor().getText()) + steps));
             }
         });
 
@@ -91,8 +118,15 @@ public class FiddlerController implements Initializable {
         colHost.setCellValueFactory(new PropertyValueFactory<>("host"));
         mainViewTable.setItems(interceptor.getRequestLogList());
         mainViewTable.setOnMouseClicked(event -> {
+            selectedLog = null;
             int idx = mainViewTable.getSelectionModel().getSelectedIndex();
-            logger.info("select\n: {}", JacksonUtils.serializePretty(interceptor.getRequestLogList().get(idx)));
+            if (idx >= 0 && idx < interceptor.getRequestLogList().size()) {
+                overView.setText(interceptor.getRequestLogList().get(idx).toString());
+                selectedLog = interceptor.getRequestLogList().get(idx);
+            }
+            if (event.getClickCount() == 2) {
+                onHttpRequest(null);
+            }
         });
         mainViewTable.widthProperty().addListener((observableValue, oldValue, newValue) -> {
             colSeq.setPrefWidth(90.0);
@@ -102,22 +136,71 @@ public class FiddlerController implements Initializable {
         });
     }
 
+    public void onHttpRequest(MouseEvent event) {
+        Window parent = mainViewTable.getScene().getWindow();
+        final Popup popup = new Popup();
+        try {
+            Parent root = FXMLLoader.load(FiddlerTool.class.getResource("request.fxml"));
+            popup.setHideOnEscape(true);
+            popup.getContent().add(root);
+
+            Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+            double width = screenSize.getWidth() * 0.17;
+            double height = screenSize.getHeight() * 0.17;
+
+            popup.show(parent, width, height);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     public void onWebServerStartClick(MouseEvent event) {
-        bindPort.getScene().getWindow().setOnCloseRequest(close -> interceptor.close(r -> logger.info("interceptor closed")));
-        if (interceptor.isRunning()) {
+        bindPort.getScene().getWindow()
+                .setOnCloseRequest(close -> interceptor.close(r -> logger.info("interceptor closed")));
+        if (isRunning) {
+            isRunning = false;
             interceptor.close(r -> {
-//                Platform.runLater(() -> {
-//                });
                 logger.info("Net server closed");
             });
         } else {
-            int port = Integer.parseInt(bindPort.getEditor().getText());
-            interceptor.start(port, r -> {
+            interceptor.start(parseConfig(), r -> {
+                isRunning = true;
             });
         }
     }
 
     public void onClearAllRecords(MouseEvent event) {
-        interceptor.getRequestLogList().clear();
+        interceptor.clearAllLog();
+    }
+
+    public void onSearch(MouseEvent event) {
+        String keyWordStr = keyWord.getText();
+        if (StringUtils.isNotEmpty(keyWordStr)) {
+            interceptor.updateFilter(log -> {
+                if (log.getHost().contains(keyWordStr)) {
+                    return true;
+                }
+                if (log.getUri().contains(keyWordStr)) {
+                    return true;
+                }
+                if (log.getMethod().contains(keyWordStr)) {
+                    return true;
+                }
+                return false;
+            });
+        } else {
+            interceptor.updateFilter(null);
+        }
+    }
+
+    public ProxyConfig parseConfig() {
+        ProxyConfig config = new ProxyConfig();
+        config.setPort(Integer.parseInt(bindPort.getEditor().getText()));
+        config.setHttps(https.isSelected());
+        config.setSetupSystemProxy(systemProxySet.isSelected());
+        config.setRemoteConnection(remoteEnable.isSelected());
+        config.setHttp2(http2Enable.isSelected());
+        config.setByPassUrls(byPass.getText());
+        return config;
     }
 }

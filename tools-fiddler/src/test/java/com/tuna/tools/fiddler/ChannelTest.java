@@ -4,6 +4,8 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandler;
+import io.netty.channel.ChannelOutboundHandler;
+import io.netty.channel.ChannelPromise;
 import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.http.HttpContent;
@@ -14,6 +16,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.net.impl.VertxHandler;
 import org.junit.Test;
 
+import java.net.SocketAddress;
 import java.nio.charset.StandardCharsets;
 
 public class ChannelTest {
@@ -89,6 +92,64 @@ public class ChannelTest {
 
             }
         });
+        channel.pipeline().addLast(new ChannelOutboundHandler() {
+            @Override
+            public void bind(ChannelHandlerContext ctx, SocketAddress localAddress, ChannelPromise promise)
+                    throws Exception {
+
+            }
+
+            @Override
+            public void connect(ChannelHandlerContext ctx, SocketAddress remoteAddress, SocketAddress localAddress,
+                                ChannelPromise promise) throws Exception {
+
+            }
+
+            @Override
+            public void disconnect(ChannelHandlerContext ctx, ChannelPromise promise) throws Exception {
+
+            }
+
+            @Override
+            public void close(ChannelHandlerContext ctx, ChannelPromise promise) throws Exception {
+
+            }
+
+            @Override
+            public void deregister(ChannelHandlerContext ctx, ChannelPromise promise) throws Exception {
+
+            }
+
+            @Override
+            public void read(ChannelHandlerContext ctx) throws Exception {
+
+            }
+
+            @Override
+            public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
+                System.out.println("write");
+            }
+
+            @Override
+            public void flush(ChannelHandlerContext ctx) throws Exception {
+
+            }
+
+            @Override
+            public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
+
+            }
+
+            @Override
+            public void handlerRemoved(ChannelHandlerContext ctx) throws Exception {
+
+            }
+
+            @Override
+            public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+
+            }
+        });
         
         String msg1 = "POST /yonbip-fi-otp/classmapping/update HTTP/1.1\r\n" +
                 "Host: yonbip.diwork.com\r\n" +
@@ -158,6 +219,7 @@ public class ChannelTest {
         ByteBuf byteBuf1 = UnpooledByteBufAllocator.DEFAULT.buffer();
         byteBuf1.writeBytes(msg2.getBytes(StandardCharsets.UTF_8));
         channel.writeInbound(byteBuf1);
+        channel.writeOutbound(byteBuf1);
 
         Thread.sleep(5000L);
     }

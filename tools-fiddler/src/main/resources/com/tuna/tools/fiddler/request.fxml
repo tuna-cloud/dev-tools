@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<AnchorPane fx:id="root" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.tuna.tools.fiddler.RequestController">
+    <children>
+        <VBox style="-fx-background-color:white;-fx-border-color: black;-fx-border-width:2;-fx-border-radius:3;-fx-hgap:3;-fx-vgap:5;" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+            <children>
+                <Label text="Host:" />
+                <TextField fx:id="host" VBox.vgrow="ALWAYS" />
+                <Label text="Url:" />
+                <TextField fx:id="uri" VBox.vgrow="ALWAYS" />
+            <HBox>
+               <children>
+                  <Label text="Method:" />
+                  <ComboBox fx:id="method" prefWidth="150.0" />
+               </children>
+            </HBox>
+                <Label text="Header:" />
+                <TextArea fx:id="header" VBox.vgrow="ALWAYS" />
+                <Label text="Body:" />
+                <TextArea fx:id="body" VBox.vgrow="ALWAYS" />
+            <Label text="Response:" />
+            <TextArea fx:id="response" editable="false" prefHeight="200.0" prefWidth="200.0" />
+            <HBox alignment="CENTER" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" VBox.vgrow="ALWAYS">
+               <children>
+                      <Button defaultButton="true" mnemonicParsing="false" prefWidth="600.0" text="Send"
+                              HBox.hgrow="ALWAYS" onMouseClicked="#onSendHttpRequest"/>
+               </children>
+            </HBox>
+            </children>
+        </VBox>
+    </children>
+</AnchorPane>

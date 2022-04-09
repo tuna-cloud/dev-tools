@@ -3,11 +3,11 @@ package com.tuna.tools.fiddler;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Queues;
 import com.google.common.collect.Sets;
+import com.tuna.commons.utils.SystemUtils;
 import com.tuna.tools.fiddler.ext.DynamicJksOptions;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandler;
 import io.netty.channel.embedded.EmbeddedChannel;
-import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.http.DefaultFullHttpRequest;
 import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.DefaultHttpRequest;
@@ -16,21 +16,20 @@ import io.netty.handler.codec.http.HttpClientCodec;
 import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.codec.http.HttpContentDecompressor;
 import io.netty.handler.codec.http.HttpServerCodec;
-import io.netty.util.ReferenceCountUtil;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
-import io.vertx.core.buffer.Buffer;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.NetSocket;
-import io.vertx.core.net.impl.VertxHandler;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import org.apache.commons.compress.utils.Lists;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -43,19 +42,24 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
+import java.util.function.Function;
 
 public class ProxyRequestInterceptor {
     private static final Logger logger = LogManager.getLogger(ProxyRequestInterceptor.class);
 
-    private Vertx vertx;
     private final DynamicJksOptions jksOptions;
+    private ProxyConfig config;
 
     private Map<String, EmbeddedChannel> reqChannelMap = Maps.newConcurrentMap();
     private Map<String, EmbeddedChannel> rspChannelMap = Maps.newConcurrentMap();
 
     private ObservableList<Log> requestLogList = FXCollections.observableArrayList();
+    private List<Log> allLogList = Lists.newArrayList();
+    private Function<Log, Boolean> filter;
 
     private Queue<Log> queue = Queues.newConcurrentLinkedQueue();
+
+    private Set<String> whiteSet = Sets.newHashSet();
 
     public ProxyRequestInterceptor() {
         jksOptions = new DynamicJksOptions();
@@ -64,16 +68,55 @@ public class ProxyRequestInterceptor {
         jksOptions.setRootKey("root.key");
     }
 
-    public void start(int port, Handler<AsyncResult<Void>> completionHandler) {
-        vertx = Vertx.vertx();
+    private void addLog(Log log) {
+        if (filter != null) {
+            if (filter.apply(log)) {
+                requestLogList.add(log);
+            }
+        } else {
+            requestLogList.add(log);
+        }
+        allLogList.add(log);
+    }
+
+    public void updateFilter(Function<Log, Boolean> filter) {
+        this.filter = filter;
+        requestLogList.clear();
+        for (Log log : allLogList) {
+            if (filter != null) {
+                if (filter.apply(log)) {
+                    requestLogList.add(log);
+                }
+            } else {
+                requestLogList.add(log);
+            }
+        }
+    }
+
+    public void start(ProxyConfig config, Handler<AsyncResult<Void>> completionHandler) {
+        this.config = config;
+        whiteSet.clear();
+        if (StringUtils.isNotEmpty(config.getByPassUrls())) {
+            String[] lines = config.getByPassUrls().split("\n");
+            for (String line : lines) {
+                whiteSet.add(line);
+            }
+        }
         NetServerOptions options = new NetServerOptions();
-        options.setPort(port);
+        options.setPort(config.getPort());
         options.setSsl(false);
         options.setSni(true);
         options.setKeyStoreOptions(jksOptions);
-        NetServer netServer = vertx.createNetServer(options);
+        NetServer netServer = VertxInstance.getInstance().createNetServer(options);
 
         netServer.connectHandler(netSocket -> netSocket.handler(message -> {
+            if (!config.isRemoteConnection()) {
+                if (!netSocket.remoteAddress().toString().contains("127.0.0.1")
+                || SystemUtils.getLocalIpAddress().contains(netSocket.remoteAddress().toString())) {
+                    netSocket.close();
+                    return;
+                }
+            }
             String text = message.toString();
             if (text.startsWith("CONNECT")) {
                 String[] lines = text.split("\n");
@@ -86,13 +129,17 @@ public class ProxyRequestInterceptor {
                         writeFuture.onComplete(writeResult -> {
                             if (writeFuture.succeeded()) {
                                 try {
-                                    netSocket.upgradeToSsl(sslResult -> {
-                                        if (sslResult.succeeded()) {
-                                            beginProxy(hostPort[0], hostPort[1], netSocket, proxyResult.result());
-                                        } else {
-                                            netSocket.close();
-                                        }
-                                    });
+                                    if (config.isHttps() && hostPort[1].equals("443")) {
+                                        netSocket.upgradeToSsl(sslResult -> {
+                                            if (sslResult.succeeded()) {
+                                                beginProxy(hostPort[0], hostPort[1], netSocket, proxyResult.result());
+                                            } else {
+                                                netSocket.close();
+                                            }
+                                        });
+                                    } else {
+                                        beginProxy(hostPort[0], hostPort[1], netSocket, proxyResult.result());
+                                    }
                                 } catch (Exception e) {
                                     logger.error("upgrade err", e);
                                     netSocket.close();
@@ -114,11 +161,10 @@ public class ProxyRequestInterceptor {
             if (res.succeeded()) {
                 logger.info("Net server bind at {} success", res.result().actualPort());
                 completionHandler.handle(Future.succeededFuture());
-                vertx.setPeriodic(1000, id -> mergeHttpRequest());
+                VertxInstance.getInstance().setPeriodic(1000, id -> mergeHttpRequest());
             } else {
                 logger.error("Net server bind failed", res.cause());
-                vertx.close();
-                vertx = null;
+                VertxInstance.close();
                 completionHandler.handle(Future.failedFuture(res.cause()));
             }
         });
@@ -149,7 +195,7 @@ public class ProxyRequestInterceptor {
                     }
                     log.setReqHeaderSize(request.headers().size());
                     log.writeRequestBody(request.content());
-                    requestLogList.add(log);
+                    addLog(log);
                 } else if (log.getHttpObject() instanceof DefaultHttpRequest) {
                     DefaultHttpRequest request = (DefaultHttpRequest) log.getHttpObject();
                     log.setUri(request.uri());
@@ -161,7 +207,7 @@ public class ProxyRequestInterceptor {
                         log.getReqHeaders().put(entry.getKey(), entry.getValue());
                     }
                     log.setReqHeaderSize(request.headers().size());
-                    requestLogList.add(log);
+                    addLog(log);
                 } else if (log.getHttpObject() instanceof HttpContent) {
                     HttpContent content = (HttpContent) log.getHttpObject();
                     Log lastLog = findLastLog(log);
@@ -213,9 +259,9 @@ public class ProxyRequestInterceptor {
     }
 
     protected Log findLastLog(Log key) {
-        int i = requestLogList.size() - 1;
+        int i = allLogList.size() - 1;
         while (i >= 0) {
-            Log log = requestLogList.get(i--);
+            Log log = allLogList.get(i--);
             if (log.getHost().equals(key.getHost()) && log.getClientIp().equals(key.getClientIp())) {
                 return log;
             }
@@ -224,10 +270,24 @@ public class ProxyRequestInterceptor {
     }
 
     public void beginProxy(String host, String port, NetSocket clientSocket, NetSocket proxySocket) {
-        clientSocket.handler(buf -> {
-            String remoteIpAddr = proxySocket.remoteAddress().toString();
-            String localAddress = proxySocket.localAddress().toString();
+        if (!whiteSet.isEmpty()) {
+            boolean isIn = false;
+            for (String key : whiteSet) {
+                if (host.contains(key)) {
+                    isIn = true;
+                    break;
+                }
+            }
+            if (!isIn) {
+                clientSocket.pipeTo(proxySocket);
+                proxySocket.pipeTo(clientSocket);
+                return;
+            }
+        }
+        String remoteIpAddr = proxySocket.remoteAddress().toString();
+        String localAddress = proxySocket.localAddress().toString();
 
+        clientSocket.handler(buf -> {
             EmbeddedChannel channel = getReqChannel(localAddress, port, host, remoteIpAddr);
             buf.getByteBuf().markReaderIndex();
             channel.writeInbound(buf.getByteBuf());
@@ -246,14 +306,21 @@ public class ProxyRequestInterceptor {
         });
 
         proxySocket.handler(buf -> {
-            String remoteIpAddr = proxySocket.remoteAddress().toString();
-            String localAddress = proxySocket.localAddress().toString();
             EmbeddedChannel channel = getRspChannel(localAddress, port, host, remoteIpAddr);
             buf.getByteBuf().markReaderIndex();
             channel.writeInbound(buf.getByteBuf());
             buf.getByteBuf().resetReaderIndex();
 
             clientSocket.write(buf);
+        });
+
+        clientSocket.closeHandler(v -> {
+            reqChannelMap.remove(localAddress);
+            rspChannelMap.remove(localAddress);
+        });
+        proxySocket.closeHandler(v -> {
+            reqChannelMap.remove(localAddress);
+            rspChannelMap.remove(localAddress);
         });
     }
 
@@ -408,10 +475,7 @@ public class ProxyRequestInterceptor {
     }
 
     public void close(Handler<AsyncResult<Void>> completionHandler) {
-        if (vertx != null) {
-            vertx.close(completionHandler);
-            vertx = null;
-        }
+        VertxInstance.close();
     }
 
     private Future<NetSocket> startNetClient(String host, int port) {
@@ -421,9 +485,13 @@ public class ProxyRequestInterceptor {
         clientOptions.setReuseAddress(false);
         clientOptions.setReusePort(false);
         clientOptions.setTrustAll(true);
-        NetClient client = vertx.createNetClient(clientOptions);
+        NetClient client = VertxInstance.getInstance().createNetClient(clientOptions);
         client.connect(port, host, connectResult -> {
             if (connectResult.succeeded()) {
+                if (!config.isHttps()) {
+                    promise.complete(connectResult.result());
+                    return;
+                }
                 connectResult.result().upgradeToSsl(r -> {
                     if (r.succeeded()) {
                         try {
@@ -455,7 +523,7 @@ public class ProxyRequestInterceptor {
                                         }
                                         subNames.add(cn);
                                     }
-                                    jksOptions.getHelper(vertx).createCertIfNotExist(cn, subNames, null);
+                                    jksOptions.getHelper(VertxInstance.getInstance()).createCertIfNotExist(cn, subNames, null);
                                 }
                             }
                             promise.complete(connectResult.result());
@@ -475,10 +543,15 @@ public class ProxyRequestInterceptor {
     }
 
     public boolean isRunning() {
-        return vertx != null;
+        return VertxInstance.getInstance() != null;
     }
 
     public ObservableList<Log> getRequestLogList() {
         return requestLogList;
+    }
+
+    public void clearAllLog() {
+        this.allLogList.clear();
+        this.requestLogList.clear();
     }
 }

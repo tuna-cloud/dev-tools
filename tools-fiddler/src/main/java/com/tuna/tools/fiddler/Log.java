@@ -214,4 +214,32 @@ public class Log {
     public String getBodySize() {
         return requestBody.readableBytes() + "/" + responseBody.readableBytes();
     }
+
+    @Override
+    public String toString() {
+        StringBuilder bd = new StringBuilder();
+        bd.append("Protocol: ").append(protocol).append("\r\n");
+        bd.append("Host: ").append(host).append("\r\n");
+        bd.append("Uri: ").append(uri).append("\r\n");
+        bd.append("Method: ").append(method).append("\r\n");
+        bd.append("Client: ").append(clientIp).append("\r\n");
+        bd.append("Server: ").append(remoteIp).append("\r\n");
+        bd.append("Cost: ").append(rspStopTime - reqStartTime).append(" ms").append("\r\n");
+        bd.append("Status: ").append(status).append("\r\n").append("\r\n");
+        bd.append("---------------------------------HttpRequest Header-------------------------------------------\r\n");
+        reqHeaders.forEach((k, v) -> bd.append(k).append(":").append(v).append("\r\n"));
+        if (requestBody.readableBytes() > 0) {
+            bd.append("---------------------------------HttpRequest Body---------------------------------------------\r\n");
+            bd.append(getRequestBody()).append("\r\n");
+        }
+        bd.append("\r\n");
+        bd.append("---------------------------------HttpResponse Header------------------------------------------\r\n");
+        rspHeaders.forEach((k, v) -> bd.append(k).append(":").append(v).append("\r\n"));
+        if (responseBody.readableBytes() > 0) {
+            bd.append("---------------------------------HttpResponse Body----------------------------------------\r\n");
+            bd.append(getResponseBody()).append("\r\n");
+        }
+        bd.append("\r\n");
+        return bd.toString();
+    }
 }
