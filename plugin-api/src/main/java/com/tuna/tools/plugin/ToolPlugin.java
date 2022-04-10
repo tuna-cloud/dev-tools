@@ -1,21 +1,14 @@
 package com.tuna.tools.plugin;
 
-import javafx.scene.control.ContextMenu;
-import javafx.scene.control.TreeItem;
-
 import java.util.List;
 
 public interface ToolPlugin {
 
-    String name();
+    Resource root();
 
-    TreeItem rootItem();
+    List<Resource> children();
 
     void init(UiContext ctx);
 
-    void onTreeItemDoubleClick(List<String> path);
-
-    void onTreeItemClick(List<String> path);
-
-    ContextMenu onContextMenuRequested(List<String> path);
+    void eventHandler(String name, String data);
 }

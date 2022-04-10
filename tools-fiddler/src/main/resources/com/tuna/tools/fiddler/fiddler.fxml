@@ -19,7 +19,6 @@
 <?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.layout.VBox?>
-<?import io.github.palexdev.materialfx.controls.MFXToggleButton?>
 <AnchorPane prefHeight="600.0" prefWidth="1000.0" xmlns="http://javafx.com/javafx/17"
             xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.tuna.tools.fiddler.FiddlerController">
     <children>
@@ -34,7 +33,7 @@
                                 <ToolBar maxHeight="-Infinity" minHeight="-Infinity" prefHeight="40.0"
                                          prefWidth="200.0">
                                     <items>
-                                        <MFXToggleButton id="customToggleButton" onMouseClicked="#onWebServerStartClick"
+                                        <ToggleButton id="customToggleButton" onMouseClicked="#onWebServerStartClick"
                                                       GridPane.columnIndex="5" GridPane.rowIndex="1"/>
 
                                         <Separator orientation="VERTICAL" prefHeight="200.0"/>

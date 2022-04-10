@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="./buefy.min.css">
+    <link rel="stylesheet" href="./all.css">
+    <link rel="stylesheet" href="./materialdesignicons.min.css">
+</head>
+
+<body>
+<div id="app">
+    <section>
+        <b-sidebar type="is-light" :fullheight='true' :fullwidth='false' :overlay='false' :right='false' v-model="open">
+            <div class="p-1">
+                <img src="./logo.png" alt="Tuna Dev Tools" class="pl-5"/>
+                <b-menu>
+                    <b-menu-list>
+                        <b-menu-item v-for="item in items" :label="item.name" :icon="item.icon" v-on:click="itemClick(item, '', item.path)">
+                            <b-menu-item v-for="child in item.children" :label="child.name" v-on:click="itemClick(item, child, child.path)"></b-menu-item>
+                        </b-menu-item>
+                    </b-menu-list>
+                </b-menu>
+            </div>
+        </b-sidebar>
+        <div class="container" :style="{width: contentWidth + 'px', height: contentHeight + 'px', marginLeft: contentMargin + 'px'}">
+            <div class="p-3">
+                <div class="box" :style="{width: (contentWidth - 20) + 'px'}">
+                    <nav class="breadcrumb" aria-label="breadcrumbs">
+                        <ul>
+                            <li v-if="activeParent != null">
+                                <b-icon :icon="activeParent.icon" size="is-small"></b-icon>
+                                <a href="#">{{activeParent.name}}</a></li>
+                            <li v-if="activeChild != null && activeChild != ''" class="is-active"><a href="#" aria-current="page" v-if="activeChild != null">{{activeChild.name}}</a></li>
+                        </ul>
+                    </nav>
+                </div>
+                <div class="box" :style="{width: (contentWidth - 20) + 'px'}">
+                    <iframe name="frame" id="frame" :src="iframeSrc" :width="contentWidth - 40" :height="contentHeight - 158" frameborder="0" style="position:relative;z-index:999" ref="frame">
+                    </iframe>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+<script src="./vue.js"></script>
+<!-- Full bundle -->
+<script src="./buefy.min.js"></script>
+
+<script>
+    const app = new Vue({
+        el: '#app',
+        data() {
+            return {
+                open: true,
+                items: [],
+                contentMargin: 260,
+                contentWidth: 400,
+                contentHeight: 600,
+                activeParent: null,
+                activeChild: null,
+                iframeSrc: ''
+            };
+        },
+        methods: {
+            itemClick(parent, child, path) {
+                this.iframeSrc = path;
+                this.activeParent = parent;
+                this.activeChild = child;
+            }
+        }
+    });
+
+    function initMenu(par) {
+        console.log(par);
+        var arr = JSON.parse(par);
+        app.items = app.items.concat(arr);
+        if (arr.length > 0) {
+            var parent = arr[0];
+            if (parent.children != null && parent.children.length > 0) {
+                app.itemClick(parent, parent.children[0], parent.path);
+            } else {
+                app.itemClick(parent, '', parent.path);
+            }
+        }
+    }
+
+    function initWidth(width) {
+        app.contentWidth = width;
+    }
+
+    function initHeight(height) {
+        app.contentHeight = height;
+    }
+
+    function emit(name, data) {
+        window.eventHandler.emit(name, data);
+    }
+</script>
+</body>
+</html>

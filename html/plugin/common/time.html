@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="../../buefy.min.css">
+    <link rel="stylesheet" href="../../all.css">
+    <link rel="stylesheet" href="../../materialdesignicons.min.css">
+</head>
+
+<body>
+<div id="app">
+    <article class="panel is-link">
+        <p class="panel-heading">时间戳在线转换工具</p>
+        <a class="panel-block is-active">
+            <b-field label="时间戳">
+                <b-input v-model="timestamp1"></b-input>
+                <b-select v-model="type1">
+                    <option value="S">S</option>
+                    <option value="MS">MS</option>
+                </b-select>
+                <b-button class="button is-primary ml-2 mr-2" @click="convert1">转换</b-button>
+                <b-input v-model="timestring1"></b-input>
+            </b-field>
+        </a>
+        <a class="panel-block is-active">
+            <b-field label="时间戳">
+                <b-input v-model="timestamp2"></b-input>
+                <b-select v-model="type2">
+                    <option value="S">S</option>
+                    <option value="MS">MS</option>
+                </b-select>
+                <b-button class="button is-primary ml-2 mr-2" @click="convert2">转换</b-button>
+                <b-input v-model="timestring2"></b-input>
+            </b-field>
+        </a>
+        <div class="content">
+            <p>时间戳是指格林威治时间1970年01月01日00时00分00秒(北京时间1970年01月01日08时00分00秒)起至现在的总秒数. 通俗的讲,时间戳是一份能够表示一份数据在一个特定时间点已经存在的完整的可验证的数据.它的提出主要是为用户 提供一份电子证据,以证明用户的某些数据的产生时间</p>
+        </div>
+    </article>
+</div>
+
+<script src="../../vue.js"></script>
+<!-- Full bundle -->
+<script src="../../buefy.min.js"></script>
+<script>
+    const app = new Vue({
+        el: '#app',
+        data() {
+            return {
+                timestamp1: new Date().getTime(),
+                type1: "MS",
+                timestring1: "",
+                timestamp2: this.format(new Date()),
+                type2: "MS",
+                timestring2: ""
+            };
+        },
+        methods: {
+            convert1() {
+                var ts = this.timestamp1;
+                if(this.type1 == "S") {
+                    ts = ts * 1000;
+                }
+                var d = new Date(ts * 1)
+                this.timestring1 = this.format(d);
+            },
+            convert2() {
+                var tmp = this.timestamp2.replace(/-/g,'/');
+                var d = new Date(tmp);
+                var ts;
+                if(this.type2 == "S") {
+                    ts = d.getTime() / 1000;
+                } else {
+                    ts = d.getTime();
+                }
+                console.log(ts);
+                this.timestring2 = ts + "";
+            },
+            format(d) {
+                var date = (d.getFullYear()) + "-" +
+                    (((d.getMonth() + 1) < 10) ? ("0" + (d.getMonth() + 1)) : (d.getMonth() + 1)) + "-" +
+                    (d.getDate() < 10 ? ("0" + d.getDate()) : d.getDate()) + " " +
+                    (d.getHours() < 10 ? ("0" + d.getHours()) : d.getHours()) + ":" +
+                    (d.getMinutes() < 10 ? ("0" + d.getMinutes()) : d.getMinutes()) + ":" +
+                    (d.getSeconds() < 10 ? ("0" + d.getSeconds()) : d.getSeconds());
+                return date;
+            }
+        }
+    });
+</script>
+</body>
+</html>

@@ -1,31 +1,27 @@
 package com.tuna.tools.fiddler;
 
+import com.tuna.commons.utils.JacksonUtils;
+import com.tuna.tools.plugin.Resource;
 import com.tuna.tools.plugin.ToolPlugin;
 import com.tuna.tools.plugin.UiContext;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Node;
-import javafx.scene.Parent;
-import javafx.scene.control.ContextMenu;
-import javafx.scene.control.Tab;
-import javafx.scene.control.TreeItem;
-import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
+import io.vertx.core.buffer.Buffer;
+import io.vertx.core.json.JsonObject;
+import javafx.application.Platform;
 
-import java.io.IOException;
+import java.util.Base64;
 import java.util.List;
 
 public class FiddlerTool implements ToolPlugin {
     private UiContext ctx;
 
     @Override
-    public String name() {
-        return "抓包工具";
+    public Resource root() {
+        return new Resource("wifi-lock-open", "抓包工具", "/plugin/fiddler/index.html");
     }
 
     @Override
-    public TreeItem rootItem() {
-        Node rootIcon = new ImageView(new Image(getClass().getClassLoader().getResourceAsStream("fiddler.png")));
-        return new TreeItem(name(), rootIcon);
+    public List<Resource> children() {
+        return null;
     }
 
     @Override
@@ -34,33 +30,28 @@ public class FiddlerTool implements ToolPlugin {
     }
 
     @Override
-    public void onTreeItemDoubleClick(List<String> path) {
-        for (Tab tab : ctx.tabPane().getTabs()) {
-            if (name().equals(tab.getId())) {
-                return;
+    public void eventHandler(String name, String data) {
+        JsonObject jsonObject = new JsonObject(Buffer.buffer(Base64.getDecoder().decode(data)));
+        System.out.println((jsonObject.toString()));
+        if (jsonObject.getString("action").equals("boot")) {
+            if (jsonObject.getBoolean("data")) {
+                VertxInstance.getInstance().setPeriodic(1000, id -> {
+                    Log log = new Log();
+                    log.setTs(System.currentTimeMillis());
+                    log.setProtocol("HTTPV1.0");
+                    log.setMethod("GET");
+                    log.setUri("/a/b/c");
+                    log.setHost("www.baidu.com");
+                    log.setStatus(200);
+                    String msg = Base64.getEncoder().encodeToString(JacksonUtils.serialize2buf(log));
+                    Platform.runLater(() -> {
+                        ctx.executeScript(
+                                "window.document.getElementById('frame').contentWindow.appendLog('" + msg + "')");
+                    });
+                });
+            } else {
+                VertxInstance.close();
             }
         }
-        Tab tab = new Tab();
-        tab.setText(name());
-        tab.setId(name());
-        try {
-            Parent root = FXMLLoader.load(FiddlerTool.class.getResource("fiddler.fxml"));
-            tab.setContent(root);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        ctx.tabPane().getTabs().add(tab);
-        ctx.tabPane().getSelectionModel().select(tab);
-    }
-
-    @Override
-    public void onTreeItemClick(List<String> path) {
-
-    }
-
-    @Override
-    public ContextMenu onContextMenuRequested(List<String> path) {
-        return null;
     }
 }

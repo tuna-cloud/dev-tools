@@ -30,9 +30,8 @@
       <artifactId>javafx-web</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.jfxtras</groupId>
-      <artifactId>jmetro</artifactId>
-      <version>11.6.14</version>
+      <groupId>io.vertx</groupId>
+      <artifactId>vertx-core</artifactId>
     </dependency>
     <dependency>
       <groupId>org.apache.commons</groupId>

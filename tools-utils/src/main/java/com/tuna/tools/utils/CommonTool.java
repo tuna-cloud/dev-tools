@@ -1,45 +1,37 @@
 package com.tuna.tools.utils;
 
 import com.google.common.collect.Maps;
+import com.tuna.commons.utils.JacksonUtils;
+import com.tuna.tools.plugin.Resource;
 import com.tuna.tools.plugin.ToolPlugin;
 import com.tuna.tools.plugin.UiContext;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Node;
-import javafx.scene.Parent;
-import javafx.scene.control.ContextMenu;
-import javafx.scene.control.MenuItem;
-import javafx.scene.control.Tab;
-import javafx.scene.control.TreeItem;
-import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.compress.utils.Lists;
-import org.apache.log4j.Logger;
+import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
+import org.apache.commons.lang3.StringUtils;
 
-import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 
 public class CommonTool implements ToolPlugin {
-
-    private static final Logger logger = Logger.getLogger(CommonTool.class);
 
     private UiContext ctx;
 
     private Map<String, List<String>> openedTabMap = Maps.newHashMap();
 
     @Override
-    public String name() {
-        return "常用";
+    public Resource root() {
+        return new Resource("human-greeting", "常用", "/plugin/common/index.html");
     }
 
     @Override
-    public TreeItem rootItem() {
-        Node rootIcon = new ImageView(new Image(getClass().getClassLoader().getResourceAsStream("util.png")));
-        TreeItem root = new TreeItem(name(), rootIcon);
-        root.getChildren().add(new TreeItem<>("Json格式化"));
-        root.getChildren().add(new TreeItem<>("时间戳转换"));
-        return root;
+    public List<Resource> children() {
+        List<Resource> list = new ArrayList<>();
+        list.add(new Resource(null, "Json格式化", "/plugin/common/json.html"));
+        list.add(new Resource(null, "时间戳转换", "/plugin/common/time.html"));
+        return list;
     }
 
     @Override
@@ -48,62 +40,33 @@ public class CommonTool implements ToolPlugin {
     }
 
     @Override
-    public void onTreeItemDoubleClick(List<String> path) {
-        if (!CollectionUtils.isEmpty(path)) {
-            openNewTab(path.get(path.size() - 1));
+    public void eventHandler(String name, String data) {
+        if (name.equals("Json格式化")) {
+            try {
+                Object result = praseJson(new String(Base64.getDecoder().decode(data.getBytes(StandardCharsets.UTF_8))));
+                if (result != null) {
+                    String msg = Base64.getEncoder()
+                            .encodeToString(JacksonUtils.serializePretty(result).getBytes(StandardCharsets.UTF_8));
+                    ctx.executeScript("window.document.getElementById('frame').contentWindow.showResult('" + msg + "')");
+                }
+            } catch (Exception e) {
+                String msg =
+                        Base64.getEncoder().encodeToString(e.getLocalizedMessage().getBytes(StandardCharsets.UTF_8));
+                ctx.executeScript("window.document.getElementById('frame').contentWindow.showResult('" + msg + "')");
+            }
         }
     }
 
-    @Override
-    public void onTreeItemClick(List<String> path) {
-
-    }
-
-    @Override
-    public ContextMenu onContextMenuRequested(List<String> path) {
-        if (CollectionUtils.isEmpty(path)) {
+    private Object praseJson(String json) {
+        if (StringUtils.isEmpty(json)) {
             return null;
         }
-        final ContextMenu cm = new ContextMenu();
-
-        MenuItem menuItem1 = new MenuItem("打开");
-        cm.getItems().add(menuItem1);
-
-        menuItem1.setOnAction(event -> {
-            openNewTab(path.get(path.size() - 1));
-        });
-        return cm;
-    }
-
-
-    private void openNewTab(String type) {
-        Tab tab = new Tab();
-        String text = type;
-        if (openedTabMap.containsKey(type) && openedTabMap.get(type).size() > 0) {
-            text += "(" + openedTabMap.get(type).size() + ")";
+        if (json.charAt(0) == '{') {
+            return new JsonObject(json);
         }
-        tab.setText(text);
-        tab.setId(text);
-        try {
-            if (type.contains("Json格式化")) {
-                Parent root = FXMLLoader.load(CommonTool.class.getResource("jackson.fxml"));
-                tab.setContent(root);
-            } else {
-                Parent root = FXMLLoader.load(CommonTool.class.getResource("timestamp.fxml"));
-                tab.setContent(root);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
+        if (json.charAt(0) == '[') {
+            return new JsonArray(json);
         }
-
-        tab.setOnClosed(event -> {
-            openedTabMap.get(type).remove(tab.getId());
-        });
-        ctx.tabPane().getTabs().add(tab);
-        if (!openedTabMap.containsKey(type)) {
-            openedTabMap.put(type, Lists.newArrayList());
-        }
-        openedTabMap.get(type).add(text);
-        ctx.tabPane().getSelectionModel().select(tab);
+        return null;
     }
 }

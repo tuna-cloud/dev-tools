@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="../../buefy.min.css">
+    <link rel="stylesheet" href="../../all.css">
+    <link rel="stylesheet" href="../../materialdesignicons.min.css">
+</head>
+
+<body>
+<div id="app">
+    <b-field label="待格式化Json">
+        <b-input type="textarea" v-model="json"></b-input>
+    </b-field>
+    <b-field>
+        <b-button type="is-success" @click="format">格式化</b-button>
+        <b-input placeholder="Search..."
+                 class="ml-5"
+                 type="search"
+                 icon-right="magnify"
+                 icon-right-clickable
+                 @icon-right-click="searchIconClick"
+                 @keyup.enter.native="searchIconClick"
+                 v-model="keyWord">
+        </b-input>
+    </b-field>
+    <b-field>
+        <div class="content">
+            <p v-html="result"></p>
+        </div>
+    </b-field>
+</div>
+
+<script src="../../vue.js"></script>
+<!-- Full bundle -->
+<script src="../../buefy.min.js"></script>
+<script src="../../base64.min.js"></script>
+<script>
+    const app = new Vue({
+        el: '#app',
+        data() {
+            return {
+                keyWord: '',
+                json: '',
+                result: ''
+            };
+        },
+        methods: {
+            format() {
+                window.parent.emit('Json格式化', Base64.encode(this.json));
+            },
+            searchIconClick() {
+                if (this.keyWord == '') {
+                    return;
+                }
+                var arrs = app.result.split(this.keyWord);
+                app.result = arrs.join('<span class="has-text-danger is-size-3">' + this.keyWord + '</span>');
+            }
+        }
+    });
+
+    function showResult(data) {
+        var text = Base64.decode(data);
+        var arrs = text.split("\n");
+        text = arrs.join("<br/>");
+        arrs = text.split(" ");
+        text =arrs.join("&emsp;");
+        app.result = text;
+    }
+</script>
+</body>
+</html>

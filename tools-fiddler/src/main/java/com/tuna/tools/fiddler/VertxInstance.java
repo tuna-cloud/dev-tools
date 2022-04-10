@@ -15,7 +15,9 @@ public class VertxInstance {
 
     public static Future<Void> close() {
         if (instance != null) {
-            return instance.close();
+            Future<Void> future = instance.close();
+            instance = null;
+            return future;
         }
         return Future.succeededFuture();
     }
