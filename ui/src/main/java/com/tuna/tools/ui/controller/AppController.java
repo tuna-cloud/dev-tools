@@ -2,6 +2,7 @@ package com.tuna.tools.ui.controller;
 
 import com.google.common.collect.Maps;
 import com.sun.javafx.webkit.WebConsoleListener;
+import com.tuna.commons.utils.JacksonUtils;
 import com.tuna.tools.plugin.Resource;
 import com.tuna.tools.plugin.ToolPlugin;
 import com.tuna.tools.plugin.UiContext;
@@ -21,6 +22,8 @@ import java.awt.Dimension;
 import java.awt.Toolkit;
 import java.io.File;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.ServiceLoader;
@@ -115,7 +118,19 @@ public class AppController implements Initializable, UiContext {
     }
 
     @Override
-    public Object executeScript(String script) {
-        return webView.getEngine().executeScript(script);
+    public Object executeScript(String function, Object args) {
+        String fullFun = "doFunction('" + function;
+        if (args == null) {
+            fullFun += "')";
+        } else {
+            fullFun += "','";
+            if (args instanceof String) {
+                fullFun += Base64.getEncoder().encodeToString(((String) args).getBytes(StandardCharsets.UTF_8));
+            } else {
+                fullFun += Base64.getEncoder().encodeToString(JacksonUtils.serialize2buf(args));
+            }
+            fullFun += "')";
+        }
+        return webView.getEngine().executeScript(fullFun);
     }
 }

@@ -43,16 +43,12 @@ public class CommonTool implements ToolPlugin {
     public void eventHandler(String name, String data) {
         if (name.equals("Json格式化")) {
             try {
-                Object result = praseJson(new String(Base64.getDecoder().decode(data.getBytes(StandardCharsets.UTF_8))));
+                Object result = praseJson(data);
                 if (result != null) {
-                    String msg = Base64.getEncoder()
-                            .encodeToString(JacksonUtils.serializePretty(result).getBytes(StandardCharsets.UTF_8));
-                    ctx.executeScript("window.document.getElementById('frame').contentWindow.showResult('" + msg + "')");
+                    ctx.executeScript("showResult", JacksonUtils.serializePretty(result));
                 }
             } catch (Exception e) {
-                String msg =
-                        Base64.getEncoder().encodeToString(e.getLocalizedMessage().getBytes(StandardCharsets.UTF_8));
-                ctx.executeScript("window.document.getElementById('frame').contentWindow.showResult('" + msg + "')");
+                ctx.executeScript("showResult", e.getLocalizedMessage());
             }
         }
     }
@@ -61,12 +57,13 @@ public class CommonTool implements ToolPlugin {
         if (StringUtils.isEmpty(json)) {
             return null;
         }
+        json = json.trim();
         if (json.charAt(0) == '{') {
             return new JsonObject(json);
         }
         if (json.charAt(0) == '[') {
             return new JsonArray(json);
         }
-        return null;
+        throw new RuntimeException("未识别的JSON:" + json);
     }
 }

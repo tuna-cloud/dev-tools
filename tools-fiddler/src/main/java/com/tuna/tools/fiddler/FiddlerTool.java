@@ -31,7 +31,7 @@ public class FiddlerTool implements ToolPlugin {
 
     @Override
     public void eventHandler(String name, String data) {
-        JsonObject jsonObject = new JsonObject(Buffer.buffer(Base64.getDecoder().decode(data)));
+        JsonObject jsonObject = new JsonObject(data);
         System.out.println((jsonObject.toString()));
         if (jsonObject.getString("action").equals("boot")) {
             if (jsonObject.getBoolean("data")) {
@@ -43,10 +43,8 @@ public class FiddlerTool implements ToolPlugin {
                     log.setUri("/a/b/c");
                     log.setHost("www.baidu.com");
                     log.setStatus(200);
-                    String msg = Base64.getEncoder().encodeToString(JacksonUtils.serialize2buf(log));
                     Platform.runLater(() -> {
-                        ctx.executeScript(
-                                "window.document.getElementById('frame').contentWindow.appendLog('" + msg + "')");
+                        ctx.executeScript("appendLog", log);
                     });
                 });
             } else {

@@ -35,7 +35,6 @@
 <script src="../../vue.js"></script>
 <!-- Full bundle -->
 <script src="../../buefy.min.js"></script>
-<script src="../../base64.min.js"></script>
 <script>
     const app = new Vue({
         el: '#app',
@@ -48,7 +47,7 @@
         },
         methods: {
             format() {
-                window.parent.emit('Json格式化', Base64.encode(this.json));
+                window.parent.emit('Json格式化', this.json);
             },
             searchIconClick() {
                 if (this.keyWord == '') {
@@ -61,9 +60,8 @@
     });
 
     function showResult(data) {
-        var text = Base64.decode(data);
-        var arrs = text.split("\n");
-        text = arrs.join("<br/>");
+        var arrs = data.split("\n");
+        var text = arrs.join("<br/>");
         arrs = text.split(" ");
         text =arrs.join("&emsp;");
         app.result = text;

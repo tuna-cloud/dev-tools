@@ -47,6 +47,7 @@
 <script src="./vue.js"></script>
 <!-- Full bundle -->
 <script src="./buefy.min.js"></script>
+<script src="./base64.min.js"></script>
 
 <script>
     const app = new Vue({
@@ -95,7 +96,16 @@
     }
 
     function emit(name, data) {
-        window.eventHandler.emit(name, data);
+        if(Object.prototype.toString.call(data) === '[object String]') {
+            window.eventHandler.emit(name, Base64.encode(data));
+        } else {
+            window.eventHandler.emit(name, Base64.encode(JSON.stringify(data)));
+        }
+    }
+
+    function doFunction(name, data) {
+        var raw = Base64.decode(data);
+        return window.document.getElementById('frame').contentWindow[name](raw);
     }
 </script>
 </body>

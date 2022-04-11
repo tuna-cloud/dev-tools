@@ -4,6 +4,7 @@ import com.google.common.collect.Maps;
 import com.tuna.tools.plugin.Resource;
 import com.tuna.tools.plugin.ToolPlugin;
 
+import java.util.Base64;
 import java.util.Map;
 
 public class UiEventHandler {
@@ -21,9 +22,8 @@ public class UiEventHandler {
     }
 
     public void emit(String name, String data) {
-        System.out.println(name + ":" + data);
         if (eventHandler.containsKey(name)) {
-            eventHandler.get(name).eventHandler(name, data);
+            eventHandler.get(name).eventHandler(name, new String(Base64.getDecoder().decode(data)));
         } else {
             System.out.println("undefined, == " + name + ":" + data);
         }
