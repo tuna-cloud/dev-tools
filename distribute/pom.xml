@@ -43,12 +43,26 @@
             <artifactId>tools-resource</artifactId>
             <version>1.0.0</version>
         </dependency>
+        <!-- 苹果x86_64 -->
         <dependency>
             <groupId>io.netty</groupId>
             <artifactId>netty-resolver-dns-native-macos</artifactId>
-            <version>4.1.69.Final</version>
+            <version>${netty.version}</version>
             <classifier>osx-x86_64</classifier>
         </dependency>
+        <!-- 苹果M1芯片 -->
+<!--        <dependency>-->
+<!--            <groupId>io.netty</groupId>-->
+<!--            <artifactId>netty-resolver-dns-native-macos</artifactId>-->
+<!--            <version>${netty.version}</version>-->
+<!--            <classifier>osx-aarch_64</classifier>-->
+<!--        </dependency>-->
+
+<!--        <dependency>-->
+<!--            <groupId>io.netty</groupId>-->
+<!--            <artifactId>netty-all</artifactId>-->
+<!--            <version>${netty.version}</version>-->
+<!--        </dependency>-->
     </dependencies>
 
     <build>

@@ -40,6 +40,7 @@ public class DynamicKeyStoreHelper {
     private Map<String, Certificate> certMap = Maps.newConcurrentMap();
 
     public DynamicKeyStoreHelper(String rootKey, String rootCert) {
+        logger.info("rootKey: {} rootCert: {}", rootKey, rootCert);
         caFactory = CaFactory.createBCKFactory(rootKey, rootCert);
     }
 

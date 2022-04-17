@@ -30,6 +30,8 @@
     </modules>
 
     <properties>
+        <vertx.version>4.2.0</vertx.version>
+        <netty.version>4.1.69.Final</netty.version>
         <application.buildNumber>1</application.buildNumber>
         <application.profile>dev</application.profile>
         <javafx.version>17</javafx.version>
