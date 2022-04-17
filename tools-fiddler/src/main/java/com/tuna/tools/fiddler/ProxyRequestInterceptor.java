@@ -4,6 +4,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Queues;
 import com.google.common.collect.Sets;
 import com.tuna.commons.utils.SystemUtils;
+import com.tuna.tools.common.VertxInstance;
 import com.tuna.tools.fiddler.ext.DynamicJksOptions;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandler;
@@ -20,14 +21,11 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
-import io.vertx.core.Vertx;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.NetSocket;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
 import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -42,7 +40,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
-import java.util.function.Function;
+import java.util.function.Consumer;
 
 public class ProxyRequestInterceptor {
     private static final Logger logger = LogManager.getLogger(ProxyRequestInterceptor.class);
@@ -53,15 +51,17 @@ public class ProxyRequestInterceptor {
     private Map<String, EmbeddedChannel> reqChannelMap = Maps.newConcurrentMap();
     private Map<String, EmbeddedChannel> rspChannelMap = Maps.newConcurrentMap();
 
-    private ObservableList<Log> requestLogList = FXCollections.observableArrayList();
+    private String filter;
     private List<Log> allLogList = Lists.newArrayList();
-    private Function<Log, Boolean> filter;
-
     private Queue<Log> queue = Queues.newConcurrentLinkedQueue();
-
     private Set<String> whiteSet = Sets.newHashSet();
+    private Consumer<Log> consumer;
 
-    public ProxyRequestInterceptor() {
+    private NetServer netServer;
+    private NetClient client;
+
+    public ProxyRequestInterceptor(Consumer<Log> consumer) {
+        this.consumer = consumer;
         jksOptions = new DynamicJksOptions();
         jksOptions.setPath(System.getProperty("user.dir") + File.separator + "data");
         jksOptions.setRootCert("root.cert");
@@ -69,28 +69,46 @@ public class ProxyRequestInterceptor {
     }
 
     private void addLog(Log log) {
-        if (filter != null) {
-            if (filter.apply(log)) {
-                requestLogList.add(log);
-            }
-        } else {
-            requestLogList.add(log);
-        }
         allLogList.add(log);
     }
 
-    public void updateFilter(Function<Log, Boolean> filter) {
+    public void updateFilter(String filter) {
         this.filter = filter;
-        requestLogList.clear();
+    }
+
+    private boolean isApplyFilter(Log log) {
+        if (log.getHost().contains(filter)) {
+            return true;
+        }
+        if (log.getUri().contains(filter)) {
+            return true;
+        }
+        if (log.getMethod().contains(filter)) {
+            return true;
+        }
+        return false;
+    }
+
+    public void close(Handler<AsyncResult<Void>> completionHandler) {
+        allLogList.clear();
+        queue.clear();
+        whiteSet.clear();
+        reqChannelMap.clear();
+        rspChannelMap.clear();
+        client.close().compose(r -> netServer.close()).onComplete(completionHandler);
+    }
+
+    public void clear() {
+        allLogList.clear();
+    }
+
+    public Log getLog(long id) {
         for (Log log : allLogList) {
-            if (filter != null) {
-                if (filter.apply(log)) {
-                    requestLogList.add(log);
-                }
-            } else {
-                requestLogList.add(log);
+            if (log.getId() == id) {
+                return log;
             }
         }
+        return null;
     }
 
     public void start(ProxyConfig config, Handler<AsyncResult<Void>> completionHandler) {
@@ -102,17 +120,24 @@ public class ProxyRequestInterceptor {
                 whiteSet.add(line);
             }
         }
+
+        NetClientOptions clientOptions = new NetClientOptions();
+        clientOptions.setReuseAddress(false);
+        clientOptions.setReusePort(false);
+        clientOptions.setTrustAll(true);
+        client = VertxInstance.getInstance().createNetClient(clientOptions);
+
         NetServerOptions options = new NetServerOptions();
         options.setPort(config.getPort());
         options.setSsl(false);
         options.setSni(true);
         options.setKeyStoreOptions(jksOptions);
-        NetServer netServer = VertxInstance.getInstance().createNetServer(options);
+        netServer = VertxInstance.getInstance().createNetServer(options);
 
         netServer.connectHandler(netSocket -> netSocket.handler(message -> {
             if (!config.isRemoteConnection()) {
                 if (!netSocket.remoteAddress().toString().contains("127.0.0.1")
-                || SystemUtils.getLocalIpAddress().contains(netSocket.remoteAddress().toString())) {
+                        || SystemUtils.getLocalIpAddress().contains(netSocket.remoteAddress().toString())) {
                     netSocket.close();
                     return;
                 }
@@ -124,7 +149,6 @@ public class ProxyRequestInterceptor {
                 Future<NetSocket> proxyFuture = startNetClient(hostPort[0], Integer.parseInt(hostPort[1]));
                 proxyFuture.onComplete(proxyResult -> {
                     if (proxyResult.succeeded()) {
-                        logger.info("connect to {}:{} success", hostPort[0], hostPort[1]);
                         Future<Void> writeFuture = netSocket.write("HTTP/1.0 200 Connection established\n\n");
                         writeFuture.onComplete(writeResult -> {
                             if (writeFuture.succeeded()) {
@@ -164,7 +188,6 @@ public class ProxyRequestInterceptor {
                 VertxInstance.getInstance().setPeriodic(1000, id -> mergeHttpRequest());
             } else {
                 logger.error("Net server bind failed", res.cause());
-                VertxInstance.close();
                 completionHandler.handle(Future.failedFuture(res.cause()));
             }
         });
@@ -185,6 +208,7 @@ public class ProxyRequestInterceptor {
                 // new request
                 if (log.getHttpObject() instanceof DefaultFullHttpRequest) {
                     DefaultFullHttpRequest request = (DefaultFullHttpRequest) log.getHttpObject();
+                    log.initId();
                     log.setUri(request.uri());
                     log.setMethod(request.method().name());
                     log.setProtocol(request.protocolVersion().text());
@@ -198,6 +222,7 @@ public class ProxyRequestInterceptor {
                     addLog(log);
                 } else if (log.getHttpObject() instanceof DefaultHttpRequest) {
                     DefaultHttpRequest request = (DefaultHttpRequest) log.getHttpObject();
+                    log.initId();
                     log.setUri(request.uri());
                     log.setMethod(request.method().name());
                     log.setProtocol(request.protocolVersion().text());
@@ -216,6 +241,7 @@ public class ProxyRequestInterceptor {
                             lastLog.writeRequestBody(content.content());
                         } else {
                             lastLog.writeResponseBody(content.content());
+                            log.setRspStopTime(log.getRspStopTime());
                         }
                     } else {
                         logger.info("http content match failed");
@@ -233,6 +259,7 @@ public class ProxyRequestInterceptor {
                         }
                         lastLog.setRspStopTime(log.getRspStopTime());
                         lastLog.writeResponseBody(response.content());
+                        logger.info(log.getHttpObject().getClass().getName());
                     } else {
                         logger.info("http response match failed");
                     }
@@ -253,6 +280,17 @@ public class ProxyRequestInterceptor {
                     }
                 } else {
                     logger.warn("un hand object: {}", log.getHttpObject().getClass().getName());
+                }
+            }
+        }
+
+        Iterator<Log> iterator = allLogList.iterator();
+        while (iterator.hasNext()) {
+            Log log = iterator.next();
+            if (log.getStatus() != 0) {
+                if (log.getPushTime() < log.getRspStopTime()) {
+                    consumer.accept(log);
+                    log.setPushTime(log.getRspStopTime());
                 }
             }
         }
@@ -317,10 +355,12 @@ public class ProxyRequestInterceptor {
         clientSocket.closeHandler(v -> {
             reqChannelMap.remove(localAddress);
             rspChannelMap.remove(localAddress);
+            proxySocket.close();
         });
         proxySocket.closeHandler(v -> {
             reqChannelMap.remove(localAddress);
             rspChannelMap.remove(localAddress);
+            proxySocket.close();
         });
     }
 
@@ -474,18 +514,9 @@ public class ProxyRequestInterceptor {
         return channel;
     }
 
-    public void close(Handler<AsyncResult<Void>> completionHandler) {
-        VertxInstance.close();
-    }
-
     private Future<NetSocket> startNetClient(String host, int port) {
         Promise<NetSocket> promise = Promise.promise();
 
-        NetClientOptions clientOptions = new NetClientOptions();
-        clientOptions.setReuseAddress(false);
-        clientOptions.setReusePort(false);
-        clientOptions.setTrustAll(true);
-        NetClient client = VertxInstance.getInstance().createNetClient(clientOptions);
         client.connect(port, host, connectResult -> {
             if (connectResult.succeeded()) {
                 if (!config.isHttps()) {
@@ -523,7 +554,8 @@ public class ProxyRequestInterceptor {
                                         }
                                         subNames.add(cn);
                                     }
-                                    jksOptions.getHelper(VertxInstance.getInstance()).createCertIfNotExist(cn, subNames, null);
+                                    jksOptions.getHelper(VertxInstance.getInstance())
+                                            .createCertIfNotExist(cn, subNames, null);
                                 }
                             }
                             promise.complete(connectResult.result());
@@ -540,18 +572,5 @@ public class ProxyRequestInterceptor {
             }
         });
         return promise.future();
-    }
-
-    public boolean isRunning() {
-        return VertxInstance.getInstance() != null;
-    }
-
-    public ObservableList<Log> getRequestLogList() {
-        return requestLogList;
-    }
-
-    public void clearAllLog() {
-        this.allLogList.clear();
-        this.requestLogList.clear();
     }
 }

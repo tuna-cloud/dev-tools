@@ -1,18 +1,22 @@
 package com.tuna.tools.fiddler;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.collect.Maps;
+import com.tuna.commons.utils.JacksonUtils;
 import com.tuna.tools.fiddler.util.HttpUtils;
 import com.tuna.tools.fiddler.util.TimeUtils;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.UnpooledByteBufAllocator;
-import io.vertx.core.MultiMap;
-import io.vertx.core.http.impl.headers.HeadersMultiMap;
 
+import java.lang.reflect.Type;
 import java.nio.charset.Charset;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class Log {
+    private static final AtomicLong COUNTER = new AtomicLong(1);
+    private long id;
     private long ts;
     private String host;
     private int port;
@@ -35,7 +39,20 @@ public class Log {
     private long reqStopTime;
     private long rspStopTime;
 
+    private long pushTime;
+
     private Object httpObject;
+
+    public Log() {
+    }
+
+    public long getId() {
+        return id;
+    }
+
+    public void initId() {
+        this.id = COUNTER.getAndIncrement();
+    }
 
     public long getTs() {
         return ts;
@@ -43,6 +60,10 @@ public class Log {
 
     public String getTime() {
         return TimeUtils.format(ts);
+    }
+
+    public void setTime(String time) {
+
     }
 
     public void setTs(long ts) {
@@ -113,6 +134,10 @@ public class Log {
         this.reqHeaders = reqHeaders;
     }
 
+    public String getReqHeadersJson() {
+        return JacksonUtils.serializePretty(reqHeaders);
+    }
+
     public long getReqHeaderSize() {
         return reqHeaderSize;
     }
@@ -130,12 +155,25 @@ public class Log {
         return HttpUtils.printBuf(requestBody);
     }
 
+    public void setRequestBody(String json) {
+        requestBody.writeCharSequence(json, Charset.defaultCharset());
+    }
+
     public void writeRequestBody(ByteBuf requestBody) {
         this.requestBody.writeBytes(requestBody);
     }
 
     public Map<String, String> getRspHeaders() {
         return rspHeaders;
+    }
+
+    public String getRspHeadersJson() {
+        return JacksonUtils.serializePretty(rspHeaders);
+    }
+
+    public void setRspHeadersJson(String json) {
+        this.rspHeaders = JacksonUtils.deserialize(json, new TypeReference<Map<String, String>>() {
+        });
     }
 
     public void setRspHeaders(Map<String, String> rspHeaders) {
@@ -157,6 +195,10 @@ public class Log {
 
     public String getResponseBody() {
         return HttpUtils.printBuf(responseBody);
+    }
+
+    public void setResponseBody(String json) {
+        responseBody.writeCharSequence(json, Charset.defaultCharset());
     }
 
     public void writeResponseBody(ByteBuf responseBody) {
@@ -194,6 +236,10 @@ public class Log {
         return rspStopTime - reqStartTime;
     }
 
+    public void setConsummation(long ts) {
+
+    }
+
     public int getStatus() {
         return status;
     }
@@ -215,6 +261,18 @@ public class Log {
         return requestBody.readableBytes() + "/" + responseBody.readableBytes();
     }
 
+    public void setBodySize(String size) {
+
+    }
+
+    public long getPushTime() {
+        return pushTime;
+    }
+
+    public void setPushTime(long pushTime) {
+        this.pushTime = pushTime;
+    }
+
     @Override
     public String toString() {
         StringBuilder bd = new StringBuilder();
@@ -229,7 +287,9 @@ public class Log {
         bd.append("---------------------------------HttpRequest Header-------------------------------------------\r\n");
         reqHeaders.forEach((k, v) -> bd.append(k).append(":").append(v).append("\r\n"));
         if (requestBody.readableBytes() > 0) {
-            bd.append("---------------------------------HttpRequest Body---------------------------------------------\r\n");
+            bd.append(
+                    "---------------------------------HttpRequest " +
+                            "Body---------------------------------------------\r\n");
             bd.append(getRequestBody()).append("\r\n");
         }
         bd.append("\r\n");

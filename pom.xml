@@ -25,6 +25,7 @@
         <module>distribute</module>
         <module>tools-utils</module>
         <module>tools-fiddler</module>
+        <module>common</module>
     </modules>
 
     <properties>

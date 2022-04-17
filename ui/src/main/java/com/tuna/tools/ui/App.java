@@ -1,5 +1,6 @@
 package com.tuna.tools.ui;
 
+import com.tuna.tools.common.VertxInstance;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
@@ -32,5 +33,8 @@ public class App extends Application {
         stage.setWidth(width);
         stage.setHeight(height);
         stage.show();
+        stage.setOnCloseRequest(event -> {
+            VertxInstance.close();
+        });
     }
 }

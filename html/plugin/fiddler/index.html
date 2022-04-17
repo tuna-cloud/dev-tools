@@ -16,19 +16,17 @@
             <div class="level-item">
                 <p class="subtitle is-5">
                 <div class="control" @click="startOrStop">
-                    <b-switch type="is-success" v-model="isStart"></b-switch>
+                    <b-switch type="is-success" size="is-small" v-model="isStart"></b-switch>
                 </div>
                 </p>
             </div>
             <div class="level-item">
                 <div class="field has-addons">
                     <p class="control">
-                        <input class="input" type="text" placeholder="Find a post">
+                        <b-input type="text" size="is-small" placeholder="Url Host Method" v-model="keyWord" @keyup.enter.native="search"/>
                     </p>
                     <p class="control">
-                        <button class="button">
-                            Search
-                        </button>
+                        <b-button type="is-primary" size="is-small" @click="search">Search</b-button>
                     </p>
                 </div>
             </div>
@@ -38,28 +36,27 @@
         <div class="level-right">
             <p class="level-item"><strong>共：{{logRecords.length}}</strong></p>
             <p class="level-item"><a>
-                <b-button type="is-danger" icon-right="delete" @click="logRecords = []" size="is-small" class="mr-1"/>
+                <b-button type="is-danger" icon-right="delete" @click="clearAllLogs" size="is-small" class="mr-1"/>
             </a></p>
             <p class="level-item"><a>
-                <b-button type="is-success" icon-right="wifi-cog" @click="" size="is-small" class="mr-5"/>
+                <b-button type="is-success" icon-right="wifi-cog" @click="showConfigDialog" size="is-small" class="mr-5"/>
             </a></p>
         </div>
     </nav>
-    <b-table
-            :data="logRecords"
-            :bordered="true"
-            :striped="true"
-            :narrowed="true"
-            hoverable
-            focusable
-            :loading="false"
-            :selected.sync="selectedLog"
-            :mobile-cards="false">
+    <b-table :data="filteredLogs" :bordered="true" :striped="true" :narrowed="true" hoverable :loading="false" :selected.sync="selectedLog"
+             sticky-header :height="height"
+             :selected.sync="selectedLog"
+             :mobile-cards="false">
+        <b-table-column field="id" label="Id" width="20" v-slot="props">
+            <span class="tag is-success">
+            {{ props.row.id}}
+            </span>
+        </b-table-column>
         <b-table-column field="time" label="Time" width="40" v-slot="props">
             {{ props.row.time }}
         </b-table-column>
-        <b-table-column field="uri" label="URL" v-slot="props">
-            {{ props.row.uri }}
+        <b-table-column label="URL" v-slot="props">
+            {{ props.row.uri.substring(0,20)}}
         </b-table-column>
         <b-table-column field="protocol" label="Protocol" v-slot="props">
             {{ props.row.protocol }}
@@ -68,10 +65,26 @@
             {{ props.row.method }}
         </b-table-column>
         <b-table-column field="status" label="Status" v-slot="props">
+            <span class="tag is-success" v-if="props.row.status == 200">
             {{ props.row.status }}
+            </span>
+            <span class="tag is-danger" v-else-if="props.row.status == 0">
+            {{ props.row.status }}
+            </span>
+            <span class="tag is-success" v-else-if="props.row.status == 304">
+            {{ props.row.status }}
+            </span>
+            <span class="tag is-warning" v-else-if="props.row.status != 200">
+            {{ props.row.status }}
+            </span>
         </b-table-column>
         <b-table-column field="consummation" label="Response Time" v-slot="props">
+            <span class="tag is-warning" v-if="props.row.consummation > 1000">
             {{ props.row.consummation }}
+            </span>
+            <span class="tag is-success" v-else>
+            {{ props.row.consummation }}
+            </span>
         </b-table-column>
         <b-table-column field="host" label="Host" v-slot="props">
             {{ props.row.host }}
@@ -87,21 +100,222 @@
             <div class="has-text-centered">No records</div>
         </template>
     </b-table>
+    <b-modal v-model="isComponentModalActive" has-modal-card :can-cancel="true">
+        <form action="">
+            <div class="modal-card" style="width: 500px">
+                <header class="modal-card-head">
+                    <p class="modal-card-title">Proxy Config</p>
+                </header>
+                <section class="modal-card-body">
+                    <b-field label="Port">
+                        <b-numberinput v-model="config.port" placeholder="8090" :min="1000"></b-numberinput>
+                    </b-field>
+                    <b-field label="Https">
+                        <b-checkbox v-model="config.https"></b-checkbox>
+                    </b-field>
+                    <b-field label="SetupSystemProxy">
+                        <b-checkbox v-model="config.setupSystemProxy"></b-checkbox>
+                    </b-field>
+                    <b-field label="RemoteConnection">
+                        <b-checkbox v-model="config.remoteConnection"></b-checkbox>
+                    </b-field>
+                    <b-field label="Http2(Soon)">
+                        <b-checkbox v-model="config.http2"></b-checkbox>
+                    </b-field>
+                    <b-field label="ByPassUrls">
+                        <b-input v-model="config.byPassUrls" maxlength="200" type="textarea"></b-input>
+                    </b-field>
+                </section>
+                <footer class="modal-card-foot">
+                    <b-button label="Ok" @click="saveConfig" type="is-primary"/>
+                </footer>
+            </div>
+        </form>
+    </b-modal>
+
+    <div class="box">
+        <b-tabs v-model="activeTab">
+            <b-tab-item label="Views">
+                <div v-if="selectedLog.hasOwnProperty('method')">
+                    <h5>{{selectedLog.protocol}}</h5>
+                    <h5 v-if="selectedLog.hasOwnProperty('method')"><span>{{selectedLog.method}}</span><span class="ml-2">{{selectedLog.host}}:{{selectedLog.port}}</span><span>{{selectedLog.uri}}</span></h5>
+                    <h5>
+                        Status:
+                        <span class="tag is-success" v-if="selectedLog.status == 200">
+                    {{ selectedLog.status }}
+                    </span>
+                        <span class="tag is-danger" v-else-if="selectedLog.status == 0">
+                    {{ selectedLog.status }}
+                    </span>
+                        <span class="tag is-success" v-else-if="selectedLog.status == 304">
+                    {{ selectedLog.status }}
+                    </span>
+                        <span class="tag is-warning" v-else-if="selectedLog.status != 200">
+                    {{ selectedLog.status }}
+                    </span>
+                    </h5>
+                    <h5>
+                        <span>Server:{{selectedLog.remoteIp}}</span><span class="ml-3">Client:{{selectedLog.clientIp}}</span>
+                    </h5>
+                    <h5>
+                        <label>Time(ms):</label>
+                        <span class="ml-3">Request Start: {{parseTime(selectedLog.reqStartTime)}}</span>
+                        <span class="ml-3">Request Stop: {{parseTime(selectedLog.reqStopTime)}}</span>
+                        <span class="ml-3">Response Stop: {{parseTime(selectedLog.rspStopTime)}}</span>
+                        <b-progress size="is-medium" type="is-success" show-value format="percent">
+                            <template #bar>
+                                <b-progress-bar :value="(selectedLog.reqStopTime - selectedLog.reqStartTime) * 100 /(selectedLog.rspStopTime - selectedLog.reqStartTime) ">{{selectedLog.reqStopTime - selectedLog.reqStartTime}}
+                                </b-progress-bar>
+                                <b-progress-bar :value="(selectedLog.rspStopTime - selectedLog.reqStopTime) * 100 /(selectedLog.rspStopTime - selectedLog.reqStartTime) " type="is-warning">{{selectedLog.rspStopTime -
+                                    selectedLog.reqStopTime}}
+                                </b-progress-bar>
+                            </template>
+                        </b-progress>
+                    </h5>
+                    <h5>Http Request Header</h5>
+                    <div class="table-container">
+                    <table class="table is-bordered">
+                        <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Value</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr v-for="(value,key,index) in selectedLog.reqHeaders">
+                            <td>{{key}}</td>
+                            <td>{{value}}</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                    </div>
+                    <div v-if="selectedLog.method !== 'GET'">
+                        <h5>Http Request Body</h5>
+                        <pre>{{selectedLog.requestBody}}</pre>
+                    </div>
+                    <div v-if="selectedLog.hasOwnProperty('rspHeaders')" class="table-container">
+                        <h5>Http Response Header</h5>
+                        <table class="table is-bordered">
+                            <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Value</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr v-for="(value,key,index) in selectedLog.rspHeaders">
+                                <td>{{key}}</td>
+                                <td>{{value}}</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div v-if="selectedLog.hasOwnProperty('responseBody')">
+                        <h5>Http Response Body</h5>
+                        <pre>{{selectedLog.responseBody}}</pre>
+                    </div>
+                </div>
+            </b-tab-item>
+
+            <b-tab-item label="Mock">
+                <b-field label="Http Url">
+                    <b-select v-model="mockRequest.method">
+                        <option value="GET">GET</option>
+                        <option value="POST">POST</option>
+                        <option value="PUT">PUT</option>
+                        <option value="DELETE">DELETE</option>
+                        <option value="HEAD">HEAD</option>
+                        <option value="OPTIONS">OPTIONS</option>
+                    </b-select>
+                    <b-input v-model="mockRequest.host"></b-input>
+                    <b-input v-model="mockRequest.uri" expanded></b-input>
+                    <b-button type="is-success" @click="sendMockRequest">Send</b-button>
+                </b-field>
+
+                <b-field label="Header">
+                    <b-input type="textarea" v-model="mockRequest.reqHeaders"></b-input>
+                </b-field>
+                <b-field label="Body" v-if="mockRequest.hasOwnProperty('requestBody') && mockRequest.requestBody.length > 0">
+                    <b-input type="textarea" v-model="mockRequest.requestBody"></b-input>
+                </b-field>
+                <h5 v-if="mockResponse.hasOwnProperty('status')">
+                    Status:
+                    <span class="tag is-success" v-if="mockResponse.status == 200">
+                    {{ mockResponse.status }}
+                    </span>
+                    <span class="tag is-danger" v-else-if="mockResponse.status == 0">
+                    {{ mockResponse.status }}
+                    </span>
+                    <span class="tag is-success" v-else-if="mockResponse.status == 304">
+                    {{ mockResponse.status }}
+                    </span>
+                    <span class="tag is-warning" v-else-if="mockResponse.status != 200">
+                    {{ mockResponse.status }}
+                    </span>
+                </h5>
+                <div v-if="mockResponse.hasOwnProperty('header')" class="table-container">
+                    <h5>Http Response Header</h5>
+                    <table class="table is-bordered">
+                        <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Value</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr v-for="(value,key,index) in mockResponse.header">
+                            <td>{{key}}</td>
+                            <td>{{value}}</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div v-if="mockResponse.hasOwnProperty('body')">
+                    <h5>Http Response Body</h5>
+                    <pre>{{mockResponse.body}}</pre>
+                </div>
+            </b-tab-item>
+        </b-tabs>
+    </div>
 </div>
 
 <script src="../../vue.js"></script>
 <!-- Full bundle -->
 <script src="../../buefy.min.js"></script>
 <script>
+    // var parentHeight = window.parent.getHeight();
     const app = new Vue({
         el: '#app',
         data() {
             return {
+                activeTab: 0,
+                isComponentModalActive: false,
                 isEmpty: true,
+                height: (window.parent.getHeight() - 100) / 3,
                 logRecords: [],
-                selectedLog: null,
-                isStart: false
+                filteredLogs: [],
+                selectedLog: {},
+                mockRequest: {},
+                mockResponse: {},
+                keyWord: null,
+                isStart: false,
+                config: {}
             };
+        },
+        watch: {
+            selectedLog: {
+                handler(newValue, oldValue) {
+                    this.mockRequest = {};
+                    this.mockResponse = {};
+                    this.mockRequest.id = newValue.id;
+                    this.mockRequest.method = newValue.method;
+                    this.mockRequest.host = newValue.host;
+                    this.mockRequest.port = newValue.port;
+                    this.mockRequest.uri = newValue.uri;
+                    this.mockRequest.reqHeaders = newValue.reqHeadersJson;
+                    this.mockRequest.requestBody = newValue.requestBody;
+                }
+            }
         },
         methods: {
             startOrStop() {
@@ -109,14 +323,107 @@
                 obj.action = "boot";
                 obj.data = !this.isStart;
                 window.parent.emit("抓包工具", obj);
+            },
+            search() {
+                app.filteredLogs = [];
+                var i = 0;
+                for (i = 0; i < app.logRecords.length; i++) {
+                    var record = app.logRecords[i];
+                    this.filter(record);
+                }
+            },
+            view() {
+                var obj = {};
+                obj.action = "getLog";
+                obj.data = app.selectedLog.id;
+                window.parent.emit("抓包工具", obj);
+                app.height = (window.parent.getHeight() - 100) / 3;
+            },
+            sendMockRequest() {
+                var obj = {};
+                obj.action = "mockRequest";
+                app.mockRequest.headers = JSON.parse(app.mockRequest.reqHeaders);
+                obj.data = app.mockRequest;
+                window.parent.emit("抓包工具", obj);
+            },
+            filter(record) {
+                if (app.keyWord != null) {
+                    if (record.uri.indexOf(app.keyWord) != -1) {
+                        app.filteredLogs.push(record);
+                    } else if (record.host.indexOf(app.keyWord) != -1) {
+                        app.filteredLogs.push(record);
+                    } else if (record.method.indexOf(app.keyWord) != -1) {
+                        app.filteredLogs.push(record);
+                    }
+                } else {
+                    app.filteredLogs.push(record);
+                }
+            },
+            clearAllLogs() {
+                app.filteredLogs = [];
+                app.logRecords = [];
+                var obj = {};
+                obj.action = "clear";
+                window.parent.emit("抓包工具", obj);
+            },
+            showConfigDialog() {
+                var obj = {};
+                obj.action = "getConfig";
+                window.parent.emit("抓包工具", obj);
+                app.isComponentModalActive = true;
+            },
+            saveConfig() {
+                var obj = {};
+                obj.action = "saveConfig";
+                obj.data = app.config
+                window.parent.emit("抓包工具", obj);
+                app.isComponentModalActive = false;
+            },
+            parseTime(ts) {
+                var date = new Date(ts);
+                var str = date.getHours() + ":" + date.getSeconds() + "." + date.getMilliseconds();
+                return str;
             }
         }
     });
 
     function appendLog(json) {
-        console.log(json);
         var obj = JSON.parse(json);
-        app.logRecords.push(obj);
+        var id = obj.id;
+        var lastLog = null;
+        if (app.logRecords.length > 0) {
+            lastLog = app.logRecords[app.logRecords.length - 1];
+        }
+        if (lastLog == null || (lastLog != null && id > lastLog.id)) {
+            app.logRecords.push(obj);
+            app.filter(obj);
+        } else {
+            // update
+            var length = app.logRecords.length;
+            var i = 0;
+            for (i = 0; i < length; i++) {
+                if (app.logRecords[i].id == id) {
+                    console.log(obj);
+                    app.logRecords[i] = obj;
+                    app.filter(obj);
+                }
+            }
+        }
+    }
+
+    function initConfig(json) {
+        var obj = JSON.parse(json);
+        app.config = obj;
+    }
+
+    function setLogResult(log) {
+        var obj = JSON.parse(log);
+        app.selectedLog = obj;
+    }
+
+    function mockResponse(log) {
+        var obj = JSON.parse(log);
+        app.mockResponse = obj;
     }
 </script>
 </body>
