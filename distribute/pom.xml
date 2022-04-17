@@ -38,6 +38,17 @@
             <artifactId>ui</artifactId>
             <version>1.0.0</version>
         </dependency>
+        <dependency>
+            <groupId>com.tuna.desktop</groupId>
+            <artifactId>tools-resource</artifactId>
+            <version>1.0.0</version>
+        </dependency>
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-resolver-dns-native-macos</artifactId>
+            <version>4.1.69.Final</version>
+            <classifier>osx-x86_64</classifier>
+        </dependency>
     </dependencies>
 
     <build>
@@ -76,7 +87,7 @@
                             <goal>exec</goal>
                         </goals>
                         <configuration>
-                            <skip>true</skip>
+                            <skip>false</skip>
                             <executable>jlink</executable>
                             <commandlineArgs>
                                 --output ${project.basedir}/target/jLinkImage
@@ -94,7 +105,7 @@
                         <phase>package</phase>
                         <goals><goal>exec</goal></goals>
                         <configuration>
-                            <skip>true</skip>
+                            <skip>false</skip>
                             <executable>cp</executable>
                             <commandlineArgs>
                                 -r
@@ -110,7 +121,7 @@
                             <goal>exec</goal>
                         </goals>
                         <configuration>
-                            <skip>true</skip>
+                            <skip>false</skip>
                             <executable>jpackage</executable>
                             <commandlineArgs>
                                 --module-path ${javafx.mod.home}
@@ -121,6 +132,14 @@
                                 --install-dir ${jpackage.install.dir}
                                 --java-options "${jpackage.options}"
                                 --java-options "${jpackage.jvm.options}"
+                                --java-options --add-opens
+                                --java-options javafx.web/com.sun.javafx.webkit=ALL-UNNAMED
+                                --java-options --add-opens
+                                --java-options java.base/java.security=ALL-UNNAMED
+                                --java-options --add-opens
+                                --java-options java.base/sun.security.tools.keytool=ALL-UNNAMED
+                                --java-options --add-opens
+                                --java-options java.base/sun.security.x509=ALL-UNNAMED
                                 --arguments ${jpackage.arguments}
                                 --dest ${project.basedir}/target
                                 --temp ${project.basedir}/target/tempDir

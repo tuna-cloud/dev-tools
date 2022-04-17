@@ -18,6 +18,11 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
+      <groupId>com.tuna.desktop</groupId>
+      <artifactId>tools-common</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
       <groupId>com.tuna.commons</groupId>
       <artifactId>tuna-commons</artifactId>
       <version>1.0.0</version>

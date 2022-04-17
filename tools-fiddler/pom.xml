@@ -18,6 +18,11 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
+            <groupId>com.tuna.desktop</groupId>
+            <artifactId>tools-common</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
             <groupId>com.tuna.commons</groupId>
             <artifactId>tuna-commons</artifactId>
             <version>${project.version}</version>
@@ -38,14 +43,6 @@
             <artifactId>javafx-fxml</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.vertx</groupId>
-            <artifactId>vertx-core</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-lang3</artifactId>
-        </dependency>
-        <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
         </dependency>
@@ -57,5 +54,41 @@
                 <directory>src/main/resources</directory>
             </resource>
         </resources>
+        <plugins>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.8.1</version>
+                <executions>
+                    <execution>
+                        <id>default-compile</id>
+                        <configuration>
+                            <!-- compile everything to ensure module-info contains right entries -->
+                            <release>${java.version}</release>
+                            <compilerArgs>
+                                <arg>--add-opens=java.base/java.security=ALL-UNNAMED</arg>
+                                <arg>--add-opens=java.base/sun.security.x509=ALL-UNNAMED</arg>
+                                <arg>--add-opens=java.base/sun.security.tools.keytool=ALL-UNNAMED</arg>
+                                <arg>--add-opens=javafx.web/com.sun.javafx.webkit=ALL-UNNAMED</arg>
+                            </compilerArgs>
+                        </configuration>
+                    </execution>
+                </executions>
+                <configuration>
+                    <release>${java.version}</release>
+                    <target>${java.version}</target>
+                    <source>${java.version}</source>
+                    <encoding>UTF-8</encoding>
+                    <showDeprecation>true</showDeprecation>
+                    <showWarnings>true</showWarnings>
+                    <optimize>true</optimize>
+                    <jdkToolchain>
+                        <version>${java.version}</version>
+                    </jdkToolchain>
+                    <compilerArgs>--enable-preview</compilerArgs>
+                </configuration>
+            </plugin>
+        </plugins>
     </build>
 </project>

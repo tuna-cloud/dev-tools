@@ -107,6 +107,10 @@
         var raw = Base64.decode(data);
         return window.document.getElementById('frame').contentWindow[name](raw);
     }
+
+    function getHeight() {
+        return app.contentHeight - 158;
+    }
 </script>
 </body>
 </html>

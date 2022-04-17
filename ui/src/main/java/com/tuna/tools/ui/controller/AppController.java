@@ -3,6 +3,7 @@ package com.tuna.tools.ui.controller;
 import com.google.common.collect.Maps;
 import com.sun.javafx.webkit.WebConsoleListener;
 import com.tuna.commons.utils.JacksonUtils;
+import com.tuna.tools.common.SystemUtils;
 import com.tuna.tools.plugin.Resource;
 import com.tuna.tools.plugin.ToolPlugin;
 import com.tuna.tools.plugin.UiContext;
@@ -16,7 +17,6 @@ import javafx.fxml.Initializable;
 import javafx.scene.input.KeyCode;
 import javafx.scene.web.WebView;
 import netscape.javascript.JSObject;
-import org.apache.commons.lang3.SystemUtils;
 
 import java.awt.Dimension;
 import java.awt.Toolkit;
@@ -47,7 +47,7 @@ public class AppController implements Initializable, UiContext {
         uiEventHandler = new UiEventHandler(pluginMap);
         webView.setContextMenuEnabled(false);
 
-        String baseDir = "file:" + SystemUtils.getUserDir().getAbsolutePath() + File.separator + "html";
+        String baseDir = "file:" + SystemUtils.getBaseDir() + File.separator + "html";
         webView.getEngine().load(baseDir + File.separator + "index.html");
         WebConsoleListener.setDefaultListener((webView, message, lineNumber, sourceId) -> {
             System.out.println(message + "[at " + lineNumber + "][" + sourceId + "]");
