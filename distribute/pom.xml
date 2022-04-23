@@ -38,11 +38,6 @@
             <artifactId>ui</artifactId>
             <version>1.0.0</version>
         </dependency>
-        <dependency>
-            <groupId>com.tuna.desktop</groupId>
-            <artifactId>tools-resource</artifactId>
-            <version>1.0.0</version>
-        </dependency>
         <!-- 苹果x86_64 -->
         <dependency>
             <groupId>io.netty</groupId>
@@ -124,6 +119,20 @@
                             <commandlineArgs>
                                 -r
                                 ${javafx.sdk.home}/lib
+                                ${project.basedir}/target/jLinkImage
+                            </commandlineArgs>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>copy-web</id>
+                        <phase>package</phase>
+                        <goals><goal>exec</goal></goals>
+                        <configuration>
+                            <skip>false</skip>
+                            <executable>cp</executable>
+                            <commandlineArgs>
+                                -r
+                                ${project.basedir}/../web
                                 ${project.basedir}/target/jLinkImage
                             </commandlineArgs>
                         </configuration>

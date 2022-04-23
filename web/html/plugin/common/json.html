@@ -11,20 +11,31 @@
 <body>
 <div id="app">
     <b-field label="待格式化Json">
-        <b-input type="textarea" v-model="json"></b-input>
+        <b-input type="textarea" v-model="json" :rows="jsonRows"></b-input>
     </b-field>
-    <b-field>
-        <b-button type="is-success" @click="format">格式化</b-button>
-        <b-input placeholder="Search..."
-                 class="ml-5"
-                 type="search"
-                 icon-right="magnify"
-                 icon-right-clickable
-                 @icon-right-click="searchIconClick"
-                 @keyup.enter.native="searchIconClick"
-                 v-model="keyWord">
-        </b-input>
-    </b-field>
+    <nav class="level">
+        <div class="level-left">
+            <b-button type="is-success" @click="format">格式化</b-button>
+            <b-input placeholder="Search..."
+                     class="ml-5"
+                     type="search"
+                     icon-right="magnify"
+                     icon-right-clickable
+                     @icon-right-click="searchIconClick"
+                     @keyup.enter.native="searchIconClick"
+                     v-model="keyWord">
+            </b-input>
+        </div>
+        <div class="level-right">
+            <p class="level-item"><a>
+                <b-button type="is-success" icon-right="magnify-plus-cursor" @click="jsonRows = jsonRows * 2" size="is-small" class="mr-1"/>
+            </a></p>
+            <p class="level-item"><a>
+                <b-button type="is-success" icon-right="magnify-minus-cursor" @click="jsonRows = jsonRows / 2" size="is-small" class="mr-5"/>
+            </a></p>
+        </div>
+    </nav>
+        <!-- Right side -->
     <b-field>
         <div class="content">
             <p v-html="result"></p>
@@ -40,6 +51,7 @@
         el: '#app',
         data() {
             return {
+                jsonRows: 8,
                 keyWord: '',
                 json: '',
                 result: ''

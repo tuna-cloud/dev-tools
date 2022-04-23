@@ -26,7 +26,6 @@
         <module>tools-utils</module>
         <module>tools-fiddler</module>
         <module>tools-common</module>
-        <module>tools-resource</module>
     </modules>
 
     <properties>
