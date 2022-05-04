@@ -1,0 +1,16 @@
+# kafka-devops
+
+# running command
+java
+-Dfile.encoding=UTF-8
+--module-path
+/Users/xuyang/tools/javafx/javafx-sdk-17.0.2/lib
+--add-modules
+javafx.base,javafx.controls,javafx.fxml,javafx.graphics,javafx.media,javafx.swing,javafx.web,java.base,java.compiler,java.instrument,java.prefs,java.rmi,java.scripting,java.security.jgss,java.sql.rowset,java.xml.crypto,jdk.attach,jdk.httpserver,jdk.jconsole,jdk.jdi,jdk.unsupported
+--add-opens javafx.web/com.sun.javafx.webkit=ALL-UNNAMED
+--add-opens java.base/java.security=ALL-UNNAMED
+--add-opens java.base/sun.security.tools.keytool=ALL-UNNAMED
+--add-opens java.base/sun.security.x509=
+-classpath
+/Users/xuyang/IdeaProjects/tuna-dev-tools/distribute/target/classes:/Users/xuyang/IdeaProjects/tuna-dev-tools/tools-kafka/target/classes:/Users/xuyang/IdeaProjects/tuna-dev-tools/plugin-api/target/classes:/Users/xuyang/IdeaProjects/tuna-dev-tools/ui/target/classes:/Users/xuyang/.m2/repository/org/apache/commons/commons-lang3/3.9/commons-lang3-3.9.jar:/Users/xuyang/.m2/repository/commons-io/commons-io/2.6/commons-io-2.6.jar:/Users/xuyang/.m2/repository/com/google/guava/guava/27.1-jre/guava-27.1-jre.jar:/Users/xuyang/.m2/repository/com/google/guava/failureaccess/1.0.1/failureaccess-1.0.1.jar:/Users/xuyang/.m2/repository/com/google/guava/listenablefuture/9999.0-empty-to-avoid-conflict-with-guava/listenablefuture-9999.0-empty-to-avoid-conflict-with-guava.jar:/Users/xuyang/.m2/repository/com/google/code/findbugs/jsr305/3.0.2/jsr305-3.0.2.jar:/Users/xuyang/.m2/repository/org/checkerframework/checker-qual/2.5.2/checker-qual-2.5.2.jar:/Users/xuyang/.m2/repository/com/google/errorprone/error_prone_annotations/2.2.0/error_prone_annotations-2.2.0.jar:/Users/xuyang/.m2/repository/com/google/j2objc/j2objc-annotations/1.1/j2objc-annotations-1.1.jar:/Users/xuyang/.m2/repository/org/codehaus/mojo/animal-sniffer-annotations/1.17/animal-sniffer-annotations-1.17.jar:/Users/xuyang/.m2/repository/org/openjfx/javafx-controls/17/javafx-controls-17.jar:/Users/xuyang/.m2/repository/org/openjfx/javafx-controls/17/javafx-controls-17-mac.jar:/Users/xuyang/.m2/repository/org/openjfx/javafx-graphics/17/javafx-graphics-17.jar:/Users/xuyang/.m2/repository/org/openjfx/javafx-graphics/17/javafx-graphics-17-mac.jar:/Users/xuyang/.m2/repository/org/openjfx/javafx-base/17/javafx-base-17.jar:/Users/xuyang/.m2/repository/org/openjfx/javafx-base/17/javafx-base-17-mac.jar:/Users/xuyang/.m2/repository/org/openjfx/javafx-fxml/17/javafx-fxml-17.jar:/Users/xuyang/.m2/repository/org/openjfx/javafx-fxml/17/javafx-fxml-17-mac.jar:/Users/xuyang/.m2/repository/org/openjfx/javafx-web/17/javafx-web-17.jar:/Users/xuyang/.m2/repository/org/openjfx/javafx-web/17/javafx-web-17-mac.jar:/Users/xuyang/.m2/repository/org/openjfx/javafx-media/17/javafx-media-17.jar:/Users/xuyang/.m2/repository/org/openjfx/javafx-media/17/javafx-media-17-mac.jar:/Users/xuyang/.m2/repository/org/apache/logging/log4j/log4j-1.2-api/2.16.0/log4j-1.2-api-2.16.0.jar:/Users/xuyang/.m2/repository/org/apache/logging/log4j/log4j-api/2.16.0/log4j-api-2.16.0.jar:/Users/xuyang/.m2/repository/com/lmax/disruptor/3.4.2/disruptor-3.4.2.jar
+com.tuna.tools.ui.App
