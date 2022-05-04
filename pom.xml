@@ -41,7 +41,8 @@
         <jpackage.install.dir>Tuna</jpackage.install.dir>
         <jpackage.arguments>arg1</jpackage.arguments>
         <jpackage.options>-Duser.timezone=Asia/Shanghai -Dfile.encoding=UTF-8 -Dvertx.logger-delegate-factory-class-name=io.vertx.core.logging.Log4j2LogDelegateFactory</jpackage.options>
-        <jpackage.jvm.options>-XX:+UseZGC -XX:ConcGCThreads=2 -Xmx1024M -Xms512M -Xlog:gc*:file=gc.log:time,tags:filecount=10,filesize=102400</jpackage.jvm.options>
+<!--        <jpackage.jvm.options>-XX:+UseZGC -XX:ConcGCThreads=2 -Xmx1024M -Xms512M -Xlog:gc*:file=gc.log:time,tags:filecount=10,filesize=102400</jpackage.jvm.options>-->
+        <jpackage.jvm.options>-XX:+UseZGC -XX:ConcGCThreads=2 -Xmx1024M -Xms256M</jpackage.jvm.options>
         <jpackage.mainjar>ui-${project.version}.jar</jpackage.mainjar>
         <jpackage.mainClass>com.tuna.tools.ui.App</jpackage.mainClass>
         <!-- optional -->
